@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Navbar from "./Navbar";
 
 const listedBooks = [
   { id: 1, title: "H.C. Verma Vol. 1", author: "H.C. Verma", subject: "Physics", status: "available", color: "bg-blue-100 text-blue-700" },
@@ -69,153 +70,156 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-
-      {/* Profile Hero */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center gap-5 mb-6">
-        <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-medium shrink-0">
-          AK
-        </div>
-        <div>
-          <p className="text-lg font-medium text-gray-900">{form.name}</p>
-          <p className="text-sm text-gray-500 mt-0.5">{form.email} · {form.location}</p>
-          <div className="flex gap-5 mt-2">
-            <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">6</span> listed</span>
-            <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">3</span> exchanged</span>
-            <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{wishlist.length}</span> wishlist</span>
+    <div className="min-h-screen bg-white">
+      <Navbar isprofile = {true}/>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        
+        {/* Profile Hero */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center gap-5 mb-6">
+          <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-medium shrink-0">
+            AK
           </div>
-        </div>
-        <button
-          onClick={() => handleTabChange("edit")}
-          className="ml-auto text-sm border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition"
-        >
-          Edit profile
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6">
-        {tabs.map((tab) => (
+          <div>
+            <p className="text-lg font-medium text-gray-900">{form.name}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{form.email} · {form.location}</p>
+            <div className="flex gap-5 mt-2">
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">6</span> listed</span>
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">3</span> exchanged</span>
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{wishlist.length}</span> wishlist</span>
+            </div>
+          </div>
           <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
-            className={`px-5 py-2.5 text-sm border-b-2 transition ${
-              activeTab === tab.key
-                ? "border-gray-900 text-gray-900 font-medium"
-                : "border-transparent text-gray-500 hover:text-gray-800"
-            }`}
+            onClick={() => handleTabChange("edit")}
+            className="ml-auto text-sm border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition"
           >
-            {tab.label}
+            Edit profile
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* My Listed Books */}
-      {activeTab === "listed" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {listedBooks.map((book) => (
-            <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4">
-              <div className={`w-full h-20 rounded-lg flex items-center justify-center text-xs font-medium mb-3 ${book.color}`}>
-                {book.subject}
-              </div>
-              <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
-              <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-md ${statusStyles[book.status]}`}>
-                {book.status}
-              </span>
-            </div>
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className={`px-5 py-2.5 text-sm border-b-2 transition ${
+                activeTab === tab.key
+                  ? "border-gray-900 text-gray-900 font-medium"
+                  : "border-transparent text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
-      )}
 
-      {/* Wishlist */}
-      {activeTab === "wishlist" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {wishlist.map((book) => (
-            <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
-              <div className="w-10 h-14 bg-purple-100 rounded shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">{book.title}</p>
+        {/* My Listed Books */}
+        {activeTab === "listed" && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {listedBooks.map((book) => (
+              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4">
+                <div className={`w-full h-20 rounded-lg flex items-center justify-center text-xs font-medium mb-3 ${book.color}`}>
+                  {book.subject}
+                </div>
+                <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
+                <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-md ${statusStyles[book.status]}`}>
+                  {book.status}
+                </span>
               </div>
-              <button
-                onClick={() => setWishlist(wishlist.filter((b) => b.id !== book.id))}
-                className="ml-auto text-gray-400 hover:text-red-500 text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* History */}
-      {activeTab === "history" && (
-        <div className="flex flex-col gap-3">
-          {history.map((item) => (
-            <div key={item.id} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0 ${historyBg[item.type]}`}>
-                {historyIcon[item.type]}
+        {/* Wishlist */}
+        {activeTab === "wishlist" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {wishlist.map((book) => (
+              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
+                <div className="w-10 h-14 bg-purple-100 rounded shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{book.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
+                </div>
+                <button
+                  onClick={() => setWishlist(wishlist.filter((b) => b.id !== book.id))}
+                  className="ml-auto text-gray-400 hover:text-red-500 text-lg leading-none"
+                >
+                  ×
+                </button>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.title}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {item.type === "exchange" ? "With" : item.type === "bought" ? "From" : "To"} {item.with}
-                </p>
-              </div>
-              <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{item.date}</span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Edit Profile */}
-      {activeTab === "edit" && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-lg">
-          {[
-            { label: "Full name", key: "name", type: "text" },
-            { label: "Email", key: "email", type: "email" },
-            { label: "College / Institution", key: "college", type: "text" },
-            { label: "Location", key: "location", type: "text" },
-          ].map(({ label, key, type }) => (
-            <div key={key} className="mb-5">
-              <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
-              <input
-                type={type}
-                value={draft[key]}
-                onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300"
+        {/* History */}
+        {activeTab === "history" && (
+          <div className="flex flex-col gap-3">
+            {history.map((item) => (
+              <div key={item.id} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0 ${historyBg[item.type]}`}>
+                  {historyIcon[item.type]}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.title}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {item.type === "exchange" ? "With" : item.type === "bought" ? "From" : "To"} {item.with}
+                  </p>
+                </div>
+                <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{item.date}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Edit Profile */}
+        {activeTab === "edit" && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-lg">
+            {[
+              { label: "Full name", key: "name", type: "text" },
+              { label: "Email", key: "email", type: "email" },
+              { label: "College / Institution", key: "college", type: "text" },
+              { label: "Location", key: "location", type: "text" },
+            ].map(({ label, key, type }) => (
+              <div key={key} className="mb-5">
+                <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
+                <input
+                  type={type}
+                  value={draft[key]}
+                  onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                />
+              </div>
+            ))}
+            <div className="mb-5">
+              <label className="text-xs text-gray-500 block mb-1.5">Bio</label>
+              <textarea
+                rows={3}
+                value={draft.bio}
+                onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300 resize-none"
               />
             </div>
-          ))}
-          <div className="mb-5">
-            <label className="text-xs text-gray-500 block mb-1.5">Bio</label>
-            <textarea
-              rows={3}
-              value={draft.bio}
-              onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300 resize-none"
-            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setForm(draft)}
+                className="bg-gray-900 text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Save changes
+              </button>
+              <button
+                onClick={() => setDraft(form)}
+                className="text-sm border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
+              >
+                Discard
+              </button>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setForm(draft)}
-              className="bg-gray-900 text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-700 transition"
-            >
-              Save changes
-            </button>
-            <button
-              onClick={() => setDraft(form)}
-              className="text-sm border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
-            >
-              Discard
-            </button>
-          </div>
-        </div>
-      )}
+        )}
 
+      </div>
     </div>
   );
 }

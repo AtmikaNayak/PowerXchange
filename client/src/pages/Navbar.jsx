@@ -32,10 +32,14 @@ export default function Navbar({ isProfile }) {
 
       {/* Nav links + actions */}
       <div className="flex items-center gap-5">
-        {["Home", "Browse"].map((link) => (
+        {["Home", "Browse", "Sell Book"].map((link) => (
           <span
             key={link}
-            onClick={() => navigate(link === "Home" ? "/home" : `/${link.toLowerCase()}`)}
+            onClick={() => {
+              if (link === "Home") navigate("/home");
+              else if (link === "Browse") navigate("/browse");
+              else if (link === "Sell Book") navigate("/sellbook");
+            }}
             className="text-sm text-slate-500 font-medium cursor-pointer hover:text-blue-600 transition-colors"
           >
             {link}
@@ -58,7 +62,7 @@ export default function Navbar({ isProfile }) {
           Sign Up
         </button>
 
-        {isProfile && (
+        {!isProfile && (
           <button
             onClick={() => navigate("/profile")}
             className="flex items-center gap-2 text-sm text-slate-600 font-medium

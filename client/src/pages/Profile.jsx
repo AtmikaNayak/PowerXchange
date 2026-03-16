@@ -12,10 +12,10 @@ const listedBooks = [
 ];
 
 const wishlistBooks = [
-  { id: 1, title: "Clean Code", author: "Robert C. Martin", price: 250, condition: "Good", seller: "Rahul Shetty" },
-  { id: 2, title: "The Pragmatic Programmer", author: "Hunt & Thomas", price: 200, condition: "Like New", seller: "Priya Nair" },
-  { id: 3, title: "Discrete Mathematics", author: "Kenneth Rosen", price: 180, condition: "Fair", seller: "Kiran Bhat" },
-  { id: 4, title: "System Design Interview", author: "Alex Xu", price: 300, condition: "Good", seller: "Deepak Kamath" },
+  { id: 1, title: "Clean Code", author: "Robert C. Martin", price: 250, condition: "Good", seller: "Rahul Shetty", olid: "OL7353617M" },
+  { id: 2, title: "The Pragmatic Programmer", author: "Hunt & Thomas", price: 200, condition: "Like New", seller: "Priya Nair", olid: "OL7353490M" },
+  { id: 3, title: "Discrete Mathematics", author: "Kenneth Rosen", price: 180, condition: "Fair", seller: "Kiran Bhat", olid: "OL24295682M" },
+  { id: 4, title: "System Design Interview", author: "Alex Xu", price: 300, condition: "Good", seller: "Deepak Kamath", olid: "OL32125489M" },
 ];
 
 const history = [
@@ -33,6 +33,29 @@ const statusStyles = {
 
 const historyIcon = { exchange: "⇄", bought: "↓", sold: "↑" };
 const historyBg = { exchange: "bg-green-100", bought: "bg-blue-100", sold: "bg-amber-100" };
+
+function BookCover({ olid, title }) {
+  const [imgError, setImgError] = useState(false);
+  const coverUrl = `https://covers.openlibrary.org/b/olid/${olid}-M.jpg`;
+
+  if (!imgError) {
+    return (
+      <img
+        src={coverUrl}
+        alt={title}
+        onError={() => setImgError(true)}
+        className="w-12 h-16 rounded-lg object-cover shrink-0 shadow-sm border border-gray-100"
+      />
+    );
+  }
+
+  // Fallback: colored placeholder with first letter
+  return (
+    <div className="w-12 h-16 rounded-lg bg-purple-100 flex items-center justify-center shrink-0 shadow-sm border border-purple-200">
+      <span className="text-purple-500 font-bold text-lg">{title[0]}</span>
+    </div>
+  );
+}
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -123,7 +146,6 @@ export default function Profile() {
                 <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-md ${statusStyles[book.status]}`}>
                   {book.status}
                 </span>
-                {/* Buy button — only show if available */}
                 {book.status === "available" && (
                   <button
                     onClick={() => handleBuy(book)}
@@ -141,13 +163,20 @@ export default function Profile() {
         {activeTab === "wishlist" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {wishlist.map((book) => (
-              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
-                <div className="w-10 h-14 bg-purple-100 rounded shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{book.title}</p>
+              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4">
+                
+                {/* Book Cover */}
+                <BookCover olid={book.olid} title={book.title} />
+
+                {/* Book Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
+                  <p className="text-xs text-indigo-600 font-semibold mt-1">₹{book.price}</p>
                 </div>
-                <div className="ml-auto flex flex-col gap-1.5 items-end">
+
+                {/* Actions */}
+                <div className="flex flex-col gap-1.5 items-end shrink-0">
                   <button
                     onClick={() => handleBuy(book)}
                     className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition"

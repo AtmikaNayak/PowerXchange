@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import Navbar from './Navbar';
+import HomePage from "./HomePage";
 
 function Signup() {
   const navigate = useNavigate();
@@ -61,6 +63,7 @@ function Signup() {
           <button
             type="submit"
             className="bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 mt-2"
+            onClick={() => navigate("/")}
           >
             Create Account
           </button>

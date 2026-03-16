@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import HomePage from "./HomePage";
 
 function Login() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ function Login() {
             <button
               type="submit"
               className="bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 mt-2"
+              onClick={() => navigate("/")}
             >
               Sign In
             </button>

@@ -23,7 +23,9 @@ function Landing() {
             >
               Get Started
             </button>
-            <button className="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg text-lg hover:bg-indigo-50">
+            <button
+             onClick={() => navigate("/book/1")}
+             className="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg text-lg hover:bg-indigo-50">
               Browse Books
             </button>
           </div>

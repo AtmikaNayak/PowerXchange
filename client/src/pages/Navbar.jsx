@@ -18,7 +18,7 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
 
       {/* Logo */}
       <h1
-        onClick={() => navigate(isLoggedIn ? "/home" : "/")}
+        onClick={() => navigate(isLoggedIn ? "/home" : "/home")}
         className="text-2xl font-bold cursor-pointer tracking-tight shrink-0"
       >
         <span className="text-blue-600">Power</span>
@@ -57,7 +57,7 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
               className="text-sm text-slate-500 font-medium cursor-pointer hover:text-blue-600 transition-colors">
               Browse
             </span>
-            <button onClick={() => navigate("/sell")}
+            <button onClick={() => navigate("/sellbook")}
               className="text-sm text-slate-500 font-medium hover:text-blue-600 transition-colors">
               Sell
             </button>

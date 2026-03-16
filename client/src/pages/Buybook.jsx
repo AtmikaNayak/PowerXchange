@@ -3,7 +3,7 @@ import { useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-export default function BookDetail() {
+export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist }) {
   const { state } = useLocation();
   const navigate = useNavigate();
   const book = state?.book;
@@ -16,7 +16,7 @@ export default function BookDetail() {
   if (!book) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
         <p className="text-center mt-20 text-gray-500">No book selected.</p>
       </div>
     );

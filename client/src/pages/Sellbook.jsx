@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 const GENRES = [
   "Fiction", "Non-Fiction", "Science", "Mathematics", "Engineering",
@@ -102,7 +103,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
+      <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
       <div className="max-w-3xl mx-auto px-4 py-10">
 
         <div className="mb-8">
@@ -406,6 +407,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

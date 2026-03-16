@@ -23,7 +23,7 @@ function Login() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate("/");
+      navigate("/home");
     }
   };
 

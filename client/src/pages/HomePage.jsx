@@ -1,200 +1,304 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
-/* ─────────────────────────────────────────
-   DATA
-───────────────────────────────────────── */
-const genres = [
-  { name: "Biography" },
-  { name: "Arts & Crafts" },
-  { name: "Business" },
-  { name: "Comics" },
-  { name: "Cookery" },
-  { name: "History" },
-  { name: "Kids" },
-  { name: "Science" },
-  { name: "Sports" },
-  { name: "Travel" },
-  { name: "Fiction" },
-  { name: "Self Help" },
+/* ═══════════════════════════════════════════
+   EXPORTED DATA  (BookDetail, AuthorPage, GenrePage import from here)
+═══════════════════════════════════════════ */
+
+export const AUTHORS = [
+  { id: "roald-dahl", name: "Roald Dahl",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Roald_Dahl_1954.jpg/240px-Roald_Dahl_1954.jpg",
+    genre: "Children's Fiction",
+    about: "Roald Dahl (1916–1990) was a British novelist born in Wales to Norwegian parents. Known for darkly comic tales with unexpected endings, his children's books — including Charlie and the Chocolate Factory and Matilda — remain beloved worldwide.",
+    books: [
+      { id: "b-rd-1", title: "Charlie & the Chocolate Factory", img: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg", price: 180 },
+      { id: "b-rd-2", title: "Matilda",           img: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg", price: 160 },
+      { id: "b-rd-3", title: "The BFG",            img: "https://covers.openlibrary.org/b/isbn/9780142410387-M.jpg", price: 150 },
+      { id: "b-rd-4", title: "James & the Giant Peach", img: "https://covers.openlibrary.org/b/isbn/9780142410363-M.jpg", price: 145 },
+    ],
+  },
+  { id: "jk-rowling", name: "J.K. Rowling",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/J._K._Rowling_2010.jpg/240px-J._K._Rowling_2010.jpg",
+    genre: "Fantasy",
+    about: "J.K. Rowling (born 1965) is a British author best known for the Harry Potter series, which has sold over 500 million copies. She wrote the first book while a single mother and it became one of the best-selling series in history.",
+    books: [
+      { id: "b-jk-1", title: "Harry Potter: Sorcerer's Stone",    img: "https://covers.openlibrary.org/b/isbn/9780439708180-L.jpg", price: 250 },
+      { id: "b-jk-2", title: "Harry Potter: Chamber of Secrets",  img: "https://covers.openlibrary.org/b/isbn/9780439064866-M.jpg", price: 250 },
+      { id: "b-jk-3", title: "Harry Potter: Prisoner of Azkaban", img: "https://covers.openlibrary.org/b/isbn/9780439136358-M.jpg", price: 260 },
+    ],
+  },
+  { id: "rick-riordan", name: "Rick Riordan",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Rick_Riordan_2014.jpg/240px-Rick_Riordan_2014.jpg",
+    genre: "Fantasy / Mythology",
+    about: "Rick Riordan (born 1964) is an American author and former teacher best known for Percy Jackson & the Olympians. He created Percy Jackson to help his son, diagnosed with ADHD and dyslexia. His books have sold over 30 million copies.",
+    books: [
+      { id: "b-rr-1", title: "Percy Jackson: The Lightning Thief", img: "https://covers.openlibrary.org/b/isbn/9780786838653-M.jpg", price: 220 },
+      { id: "b-rr-2", title: "Percy Jackson: Sea of Monsters",     img: "https://covers.openlibrary.org/b/isbn/9780786838652-M.jpg", price: 220 },
+    ],
+  },
+  { id: "sudha-murthy", name: "Sudha Murthy",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sudha_Murthy_at_JLF_2018_01.jpg/240px-Sudha_Murthy_at_JLF_2018_01.jpg",
+    genre: "Indian Fiction & Non-Fiction",
+    about: "Sudha Murthy (born 1950) is an Indian author, educator, and philanthropist. Chairperson of the Infosys Foundation, she has written over 30 books translated into all major Indian languages.",
+    books: [
+      { id: "b-sm-1", title: "Wise and Otherwise", img: "https://covers.openlibrary.org/b/id/8114491-M.jpg", price: 190 },
+      { id: "b-sm-2", title: "The Day I Stopped Drinking Milk", img: "https://covers.openlibrary.org/b/isbn/9780143419174-M.jpg", price: 175 },
+    ],
+  },
+  { id: "dan-brown", name: "Dan Brown",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Dan_Brown_2012.jpg/240px-Dan_Brown_2012.jpg",
+    genre: "Thriller",
+    about: "Dan Brown (born 1964) is an American thriller author. The Da Vinci Code has sold over 80 million copies, making it one of the best-selling books of all time. His plots weave codes and conspiracy theories around real institutions.",
+    books: [
+      { id: "b-db-1", title: "The Da Vinci Code", img: "https://covers.openlibrary.org/b/isbn/9780307474278-M.jpg", price: 230 },
+      { id: "b-db-2", title: "Angels & Demons",   img: "https://covers.openlibrary.org/b/isbn/9781416524793-M.jpg", price: 220 },
+      { id: "b-db-3", title: "Inferno",            img: "https://covers.openlibrary.org/b/isbn/9780385537858-M.jpg", price: 210 },
+    ],
+  },
+  { id: "jeff-kinney", name: "Jeff Kinney",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Jeff_Kinney_2014.jpg/240px-Jeff_Kinney_2014.jpg",
+    genre: "Children's / Humor",
+    about: "Jeff Kinney (born 1979) is an American author and cartoonist best known for Diary of a Wimpy Kid. The series has sold over 250 million copies worldwide in 65 languages.",
+    books: [
+      { id: "b-jki-1", title: "Diary of a Wimpy Kid", img: "https://covers.openlibrary.org/b/isbn/9780810993136-M.jpg", price: 200 },
+      { id: "b-jki-2", title: "Rodrick Rules",         img: "https://covers.openlibrary.org/b/isbn/9780810994737-M.jpg", price: 200 },
+    ],
+  },
+  { id: "enid-blyton", name: "Enid Blyton",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Enid_blyton.jpg/240px-Enid_blyton.jpg",
+    genre: "Children's Fiction",
+    about: "Enid Blyton (1897–1968) wrote over 700 children's books including the Famous Five and Secret Seven series. Her books have been translated into over 90 languages and continue to sell millions of copies each year.",
+    books: [
+      { id: "b-eb-1", title: "Famous Five: Five on a Treasure Island", img: "https://covers.openlibrary.org/b/isbn/9780340796177-M.jpg", price: 140 },
+      { id: "b-eb-2", title: "The Magic Faraway Tree", img: "https://covers.openlibrary.org/b/isbn/9780603560934-M.jpg", price: 130 },
+    ],
+  },
+  { id: "james-patterson", name: "James Patterson",
+    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/James_Patterson_2010.jpg/240px-James_Patterson_2010.jpg",
+    genre: "Thriller",
+    about: "James Patterson (born 1947) has sold over 380 million copies of his books worldwide. Best known for the Alex Cross series, he has written over 200 novels — most of them bestsellers.",
+    books: [
+      { id: "b-jp-1", title: "Along Came a Spider", img: "https://covers.openlibrary.org/b/isbn/9780446364904-M.jpg", price: 210 },
+      { id: "b-jp-2", title: "Kiss the Girls",      img: "https://covers.openlibrary.org/b/isbn/9780446602242-M.jpg", price: 200 },
+    ],
+  },
 ];
 
-const authors = [
-  { name: "Roald Dahl" },
-  { name: "Jeff Kinney" },
-  { name: "Enid Blyton" },
-  { name: "Sudha Murthy" },
-  { name: "Rick Riordan" },
-  { name: "J.K. Rowling" },
-  { name: "Dan Brown" },
-  { name: "James Patterson" },
+export const BOOKS = [
+  { id: "1", title: "Introduction to Algorithms", author: "Thomas H. Cormen", price: 299, listingType: "rent", condition: "good", genre: "Science", description: "A comprehensive introduction to modern algorithms covering sorting, searching, graph algorithms and dynamic programming. Some pencil markings on pages 40–60, otherwise great shape.", imageUrl: "https://covers.openlibrary.org/b/id/8739161-L.jpg", available: true, rentedTillNow: 6, avgReadingTime: "3 weeks", avgRentingTime: "4 weeks", authorId: null, seller: { name: "Arjun Sharma", college: "NIT Surathkal", rating: 4.5, totalRatings: 12 }, relatedBooks: [{ id: "2", title: "Clean Code", author: "Robert C. Martin", price: 199, imageUrl: "https://covers.openlibrary.org/b/id/8432472-L.jpg" }], feedback: [{ id: 1, user: "Sneha R.", college: "PESIT Bangalore", rating: 5, comment: "Excellent condition, very responsive seller.", date: "Jan 2025" }, { id: 2, user: "Karthik M.", college: "NITK Surathkal", rating: 4, comment: "Good condition as described. Overall great experience.", date: "Dec 2024" }] },
+  { id: "2", title: "Clean Code", author: "Robert C. Martin", price: 199, listingType: "sell", condition: "new", genre: "Science", description: "Like new condition. Only read once. A handbook of agile software craftsmanship — perfect for learning maintainable, readable code.", imageUrl: "https://covers.openlibrary.org/b/id/8432472-L.jpg", available: true, rentedTillNow: 3, avgReadingTime: "2 weeks", avgRentingTime: "3 weeks", authorId: null, seller: { name: "Priya Nair", college: "RVCE Bangalore", rating: 5.0, totalRatings: 8 }, relatedBooks: [{ id: "1", title: "Introduction to Algorithms", author: "Thomas H. Cormen", price: 299, imageUrl: "https://covers.openlibrary.org/b/id/8739161-L.jpg" }], feedback: [{ id: 1, user: "Rahul V.", college: "BMS College", rating: 5, comment: "Absolutely like new. Seller very professional.", date: "Feb 2025" }] },
+  { id: "b-rd-1", title: "Charlie & the Chocolate Factory", author: "Roald Dahl", price: 180, listingType: "sell", condition: "good", genre: "Kids", description: "Classic Roald Dahl in good condition with minor cover wear. Charlie Bucket's golden ticket adventure into Willy Wonka's magical chocolate factory.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg", available: true, rentedTillNow: 8, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "roald-dahl", seller: { name: "Meera Rao", college: "Christ University Bangalore", rating: 4.8, totalRatings: 15 }, relatedBooks: [{ id: "b-rd-2", title: "Matilda", author: "Roald Dahl", price: 160, imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg" }], feedback: [{ id: 1, user: "Aditya K.", college: "BMS College", rating: 5, comment: "Great copy, fast delivery!", date: "Mar 2025" }] },
+  { id: "b-rd-2", title: "Matilda", author: "Roald Dahl", price: 160, listingType: "rent", condition: "good", genre: "Kids", description: "Roald Dahl's beloved story of a gifted girl with telekinetic powers. Good condition with minor spine crease.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg", available: true, rentedTillNow: 10, avgReadingTime: "5 days", avgRentingTime: "2 weeks", authorId: "roald-dahl", seller: { name: "Nandini S.", college: "PES University", rating: 4.6, totalRatings: 9 }, relatedBooks: [{ id: "b-rd-1", title: "Charlie & the Chocolate Factory", author: "Roald Dahl", price: 180, imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg" }], feedback: [{ id: 1, user: "Pooja M.", college: "RVCE", rating: 5, comment: "Perfect condition. My childhood favourite!", date: "Feb 2025" }] },
+  { id: "b-jk-1", title: "Harry Potter: Sorcerer's Stone", author: "J.K. Rowling", price: 250, listingType: "sell", condition: "new", genre: "Fiction", description: "Brand-new copy of the first Harry Potter novel. Harry discovers his magical heritage and begins his journey at Hogwarts.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780439708180-L.jpg", available: true, rentedTillNow: 4, avgReadingTime: "1.5 weeks", avgRentingTime: "3 weeks", authorId: "jk-rowling", seller: { name: "Rohit B.", college: "NITK Surathkal", rating: 4.9, totalRatings: 20 }, relatedBooks: [{ id: "b-jk-2", title: "Chamber of Secrets", author: "J.K. Rowling", price: 250, imageUrl: "https://covers.openlibrary.org/b/isbn/9780439064866-M.jpg" }], feedback: [{ id: 1, user: "Asha T.", college: "MIT Manipal", rating: 5, comment: "Brand new. Delivered quickly!", date: "Jan 2025" }] },
+  { id: "b-rr-1", title: "Percy Jackson: The Lightning Thief", author: "Rick Riordan", price: 220, listingType: "rent", condition: "good", genre: "Fiction", description: "Percy Jackson discovers he is the son of a Greek god and must prevent a war among the Olympians. Good condition, minor spine crease.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780786838653-M.jpg", available: true, rentedTillNow: 7, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "rick-riordan", seller: { name: "Suraj K.", college: "Manipal Institute of Technology", rating: 4.7, totalRatings: 11 }, relatedBooks: [{ id: "b-rr-2", title: "Sea of Monsters", author: "Rick Riordan", price: 220, imageUrl: "https://covers.openlibrary.org/b/isbn/9780786838652-M.jpg" }], feedback: [{ id: 1, user: "Tanvi M.", college: "SJCE Mysuru", rating: 5, comment: "Great read. Book arrived in perfect condition.", date: "Mar 2025" }] },
+  { id: "b-db-1", title: "The Da Vinci Code", author: "Dan Brown", price: 230, listingType: "sell", condition: "good", genre: "Fiction", description: "Dan Brown's bestselling thriller. Robert Langdon investigates a murder in the Louvre that leads to a shocking conspiracy. Good condition.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780307474278-M.jpg", available: true, rentedTillNow: 5, avgReadingTime: "10 days", avgRentingTime: "3 weeks", authorId: "dan-brown", seller: { name: "Ananya P.", college: "PESIT Bangalore", rating: 4.8, totalRatings: 14 }, relatedBooks: [{ id: "b-db-2", title: "Angels & Demons", author: "Dan Brown", price: 220, imageUrl: "https://covers.openlibrary.org/b/isbn/9781416524793-M.jpg" }], feedback: [{ id: 1, user: "Rahul S.", college: "BMSCE", rating: 4, comment: "Good condition, great thriller!", date: "Jan 2025" }] },
+  { id: "b-sm-1", title: "Wise and Otherwise", author: "Sudha Murthy", price: 190, listingType: "sell", condition: "new", genre: "Biography", description: "A collection of 51 real-life stories from Sudha Murthy's experiences travelling across India. New condition, unread.", imageUrl: "https://covers.openlibrary.org/b/id/8114491-M.jpg", available: true, rentedTillNow: 2, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "sudha-murthy", seller: { name: "Kavya R.", college: "RVCE Bangalore", rating: 4.9, totalRatings: 7 }, relatedBooks: [], feedback: [{ id: 1, user: "Deepa N.", college: "Christ University", rating: 5, comment: "Beautifully written. New copy as described.", date: "Feb 2025" }] },
 ];
 
-const trending = [
-  { title: "Harry Potter & the Sorcerer's Stone", img: "https://covers.openlibrary.org/b/isbn/9780439708180-L.jpg" },
-  { title: "The Hobbit",                          img: "https://covers.openlibrary.org/b/isbn/9780547928227-M.jpg" },
-  { title: "Percy Jackson: Lightning Thief",      img: "https://covers.openlibrary.org/b/isbn/9780786838653-M.jpg" },
-  { title: "Diary of a Wimpy Kid",                img: "https://covers.openlibrary.org/b/isbn/9780810993136-M.jpg" },
-  { title: "Charlie & the Chocolate Factory",     img: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg" },
-  { title: "The Very Hungry Caterpillar",         img: "https://covers.openlibrary.org/b/isbn/9780399226908-M.jpg" },
-  { title: "Matilda",                             img: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg" },
+/* ═══════════════════════════════════════════
+   GENRE DEFINITIONS (with images + ids)
+═══════════════════════════════════════════ */
+export const GENRES = [
+  { name: "Biography",    img: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=200&fit=crop" },
+  { name: "Arts & Crafts",img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=200&h=200&fit=crop" },
+  { name: "Business",     img: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=200&h=200&fit=crop" },
+  { name: "Comics",       img: "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=200&h=200&fit=crop" },
+  { name: "Cookery",      img: "https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=200&h=200&fit=crop" },
+  { name: "History",      img: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=200&h=200&fit=crop" },
+  { name: "Kids",         img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=200&fit=crop" },
+  { name: "Science",      img: "https://images.unsplash.com/photo-1532094349884-543559c5f185?w=200&h=200&fit=crop" },
+  { name: "Sports",       img: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=200&h=200&fit=crop" },
+  { name: "Travel",       img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=200&h=200&fit=crop" },
+  { name: "Fiction",      img: "https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=200&h=200&fit=crop" },
+  { name: "Self Help",    img: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=200&h=200&fit=crop" },
 ];
 
 const newArrivals = [
-  { title: "Atomic Habits",     img: "https://covers.openlibrary.org/b/isbn/9780735211292-M.jpg" },
-  { title: "The Alchemist",     img: "https://covers.openlibrary.org/b/isbn/9780062315007-M.jpg" },
-  { title: "Ikigai",            img: "https://covers.openlibrary.org/b/isbn/9780143130727-M.jpg" },
-  { title: "Sapiens",           img: "https://covers.openlibrary.org/b/isbn/9780062316097-M.jpg" },
-  { title: "Rich Dad Poor Dad", img: "https://covers.openlibrary.org/b/isbn/9781612680194-M.jpg" },
-  { title: "Deep Work",         img: "https://covers.openlibrary.org/b/isbn/9781455586691-M.jpg" },
-  { title: "Think & Grow Rich", img: "https://covers.openlibrary.org/b/isbn/9781585424337-M.jpg" },
-  { title: "The 5 AM Club",     img: "https://covers.openlibrary.org/b/isbn/9781443456463-M.jpg" },
+  { id: "na-1", title: "Atomic Habits",     img: "https://covers.openlibrary.org/b/isbn/9780735211292-M.jpg" },
+  { id: "na-2", title: "The Alchemist",     img: "https://covers.openlibrary.org/b/isbn/9780062315007-M.jpg" },
+  { id: "na-3", title: "Ikigai",            img: "https://covers.openlibrary.org/b/isbn/9780143130727-M.jpg" },
+  { id: "na-4", title: "Sapiens",           img: "https://covers.openlibrary.org/b/isbn/9780062316097-M.jpg" },
+  { id: "na-5", title: "Rich Dad Poor Dad", img: "https://covers.openlibrary.org/b/isbn/9781612680194-M.jpg" },
+  { id: "na-6", title: "Deep Work",         img: "https://covers.openlibrary.org/b/isbn/9781455586691-M.jpg" },
+  { id: "na-7", title: "Think & Grow Rich", img: "https://covers.openlibrary.org/b/isbn/9781585424337-M.jpg" },
+  { id: "na-8", title: "The 5 AM Club",     img: "https://covers.openlibrary.org/b/isbn/9781443456463-M.jpg" },
 ];
 
-const kids = [
-  { title: "Goodnight Moon",            img: "https://covers.openlibrary.org/b/isbn/9780064430173-M.jpg" },
-  { title: "Where the Wild Things Are", img: "https://covers.openlibrary.org/b/isbn/9780064431781-M.jpg" },
-  { title: "Green Eggs and Ham",        img: "https://covers.openlibrary.org/b/isbn/9780394800165-M.jpg" },
-  { title: "The Cat in the Hat",        img: "https://covers.openlibrary.org/b/isbn/9780394800012-M.jpg" },
-  { title: "Charlotte's Web",           img: "https://covers.openlibrary.org/b/isbn/9780064400558-M.jpg" },
-  { title: "James & the Giant Peach",   img: "https://covers.openlibrary.org/b/isbn/9780142410363-M.jpg" },
-  { title: "Fantastic Mr Fox",          img: "https://covers.openlibrary.org/b/isbn/9780142410349-M.jpg" },
-  { title: "The BFG",                   img: "https://covers.openlibrary.org/b/isbn/9780142410387-M.jpg" },
+const kidsBooks = [
+  { id: "k-1", title: "Goodnight Moon",            img: "https://covers.openlibrary.org/b/isbn/9780064430173-M.jpg" },
+  { id: "k-2", title: "Where the Wild Things Are", img: "https://covers.openlibrary.org/b/isbn/9780064431781-M.jpg" },
+  { id: "k-3", title: "Green Eggs and Ham",        img: "https://covers.openlibrary.org/b/isbn/9780394800165-M.jpg" },
+  { id: "k-4", title: "Charlotte's Web",           img: "https://covers.openlibrary.org/b/isbn/9780064400558-M.jpg" },
+  { id: "k-5", title: "James & the Giant Peach",   img: "https://covers.openlibrary.org/b/isbn/9780142410363-M.jpg" },
 ];
 
-const condition = [
-  { title: "Brand New",      img: "https://images.unsplash.com/photo-1589998059171-988d887df646?w=400&h=220&fit=crop&auto=format" },
-  { title: "Like New",       img: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=220&fit=crop&auto=format" },
-  { title: "Good Condition", img: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&h=220&fit=crop&auto=format" },
-  { title: "Old Copies",     img: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=220&fit=crop&auto=format" },
+const conditionData = [
+  { title: "Brand New",      img: "https://images.unsplash.com/photo-1589998059171-988d887df646?w=400&h=220&fit=crop" },
+  { title: "Like New",       img: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=220&fit=crop" },
+  { title: "Good Condition", img: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&h=220&fit=crop" },
+  { title: "Old Copies",     img: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=220&fit=crop" },
 ];
 
-/* ─────────────────────────────────────────
-   REUSABLE SMALL COMPONENTS
-───────────────────────────────────────── */
-
-function AccentBar() {
-  return (
-    <span className="inline-block w-1 h-5 rounded-sm bg-gradient-to-b from-blue-600 to-cyan-400 flex-shrink-0" />
+/* ═══════════════════════════════════════════
+   SEARCH HELPER
+═══════════════════════════════════════════ */
+export function searchBooks(query) {
+  if (!query) return [];
+  const q = query.toLowerCase();
+  return BOOKS.filter(b =>
+    b.title.toLowerCase().includes(q) ||
+    b.author.toLowerCase().includes(q) ||
+    b.genre.toLowerCase().includes(q)
   );
 }
 
+/* ═══════════════════════════════════════════
+   SHARED UI
+═══════════════════════════════════════════ */
+function AccentBar() {
+  return <span className="inline-block w-1 h-5 rounded-sm bg-gradient-to-b from-blue-600 to-cyan-400 flex-shrink-0" />;
+}
 function ArrowBtn({ side, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className={`absolute ${side === "left" ? "left-0" : "right-0"} top-1/2 -translate-y-1/2
-        z-10 w-9 h-9 rounded-full bg-white border border-blue-100 shadow-md
-        text-blue-600 text-xl leading-none flex items-center justify-center
-        hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200`}
-    >
+    <button onClick={onClick}
+      className={`absolute ${side === "left" ? "left-0" : "right-0"} top-1/2 -translate-y-1/2 z-10
+        w-9 h-9 rounded-full bg-white border border-blue-100 shadow-md text-blue-600 text-xl leading-none
+        flex items-center justify-center hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200`}>
       {side === "left" ? "‹" : "›"}
     </button>
   );
 }
-
 function ProgressBar({ pct = 30 }) {
   return (
     <div className="mt-3 h-0.5 bg-blue-100 rounded-full">
-      <div
-        className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full"
-        style={{ width: `${pct}%` }}
-      />
+      <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full" style={{ width: `${pct}%` }} />
     </div>
   );
 }
-
-function RentBtn({ label = "Rent" }) {
+function RentBtn({ label = "Rent", onClick }) {
   return (
-    <button className="border border-blue-600 text-blue-600 text-xs font-semibold
-      rounded-full px-4 py-1 hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-400
-      hover:text-white hover:border-transparent transition-all duration-200">
+    <button onClick={onClick}
+      className="border border-blue-600 text-blue-600 text-xs font-semibold rounded-full px-4 py-1
+        hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-400 hover:text-white
+        hover:border-transparent transition-all duration-200">
       {label}
     </button>
   );
 }
 
-/* ─────────────────────────────────────────
+/* ═══════════════════════════════════════════
    HERO
-───────────────────────────────────────── */
-function Hero() {
+═══════════════════════════════════════════ */
+function Hero({ onBrowse }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-950 via-blue-700 to-cyan-400
-      flex items-center justify-between px-16 py-20 min-h-[420px]">
+      flex items-center justify-between px-16 py-20 min-h-[400px]">
       <div className="absolute -top-12 right-44 w-72 h-72 rounded-full bg-cyan-400/10 pointer-events-none" />
       <div className="absolute -bottom-16 left-80 w-52 h-52 rounded-full bg-white/5 pointer-events-none" />
-
       <div className="max-w-lg z-10">
-        <span className="inline-block bg-cyan-400/20 text-cyan-300 text-xs font-bold
-          tracking-widest uppercase rounded-full px-4 py-1.5 mb-5">
-          📖 India's Largest Book Exchange
-        </span>
         <h1 className="font-serif font-black text-5xl text-white leading-tight mb-3">
           Give Your Books<br />
-          <span className="bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">
-            a Second Life
-          </span>
+          <span className="bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">a Second Life</span>
         </h1>
-        <p className="text-white/70 text-base leading-relaxed mb-7">
-          Exchange books with people around you and discover something new.
-          Over 10 lakh titles waiting for you.
+        <p className="text-white/75 text-lg leading-relaxed mb-7">
+          Buy, sell, and rent textbooks with fellow students at your campus.
         </p>
-        <button className="bg-gradient-to-r from-blue-600 to-cyan-400 text-white font-bold
-          px-8 py-3 rounded-xl shadow-[0_6px_22px_rgba(0,198,255,0.4)]
-          hover:scale-105 transition-transform duration-200">
+        <button onClick={onBrowse}
+          className="bg-gradient-to-r from-blue-600 to-cyan-400 text-white font-bold
+            px-8 py-3 rounded-xl shadow-[0_6px_22px_rgba(0,198,255,0.4)] hover:scale-105 transition-transform duration-200">
           Browse Books
         </button>
       </div>
-
       <div className="relative z-10">
-        <img
-          src="https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=760&h=560&fit=crop&auto=format"
-          alt="Books"
-          className="w-96 h-72 object-cover rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] border-2 border-white/15"
-          onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=760&h=560&fit=crop"; }}
-        />
+        <img src="https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=760&h=560&fit=crop"
+          alt="Books" className="w-96 h-72 object-cover rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] border-2 border-white/15"
+          onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=760&h=560&fit=crop"; }} />
       </div>
     </section>
   );
 }
 
-/* ─────────────────────────────────────────
-   GENRE STRIP
-───────────────────────────────────────── */
-function GenreStrip() {
+/* ═══════════════════════════════════════════
+   GENRE STRIP (clickable → /genre/:name)
+═══════════════════════════════════════════ */
+function GenreStrip({ onGenreClick }) {
   const ref = useRef(null);
   return (
     <div className="px-7 mt-10">
-      <h2 className="text-center font-serif font-bold text-3xl text-blue-950 mb-6">
-        Browse by Genre
-      </h2>
+      <h2 className="text-center font-serif font-bold text-2xl text-blue-950 mb-6">Browse by Genre</h2>
       <div className="relative">
-        <ArrowBtn side="left"  onClick={() => ref.current.scrollBy({ left: -320, behavior: "smooth" })} />
-        <div ref={ref} className="flex gap-4 overflow-x-auto scrollbar-hide px-1 py-1">
-          {genres.map((g, i) => (
-            <div key={i}
-              className="flex flex-col items-center min-w-[82px] cursor-pointer
-                bg-white rounded-xl px-2.5 pt-3 pb-2.5 border border-blue-100
-                shadow-sm hover:bg-blue-600 hover:border-blue-600
-                hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-200
-                transition-all duration-200 group">
-              <p className="mt-2 text-center text-[11px] font-medium text-blue-900
-                group-hover:text-white leading-tight">
-                {g.name}
-              </p>
+        <div ref={ref} className="flex gap-5 overflow-x-auto scrollbar-hide px-2 py-1">
+          {GENRES.map((g) => (
+            <div key={g.name} onClick={() => onGenreClick(g.name)}
+              className="flex flex-col items-center min-w-[96px] cursor-pointer group">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-100
+                group-hover:border-blue-500 group-hover:scale-105 transition-all duration-200 shadow-sm">
+                <img src={g.img} alt={g.name} className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&size=80&background=dbeafe&color=1d4ed8`; }} />
+              </div>
+              <p className="mt-2 text-center text-sm font-semibold text-blue-900 leading-tight">{g.name}</p>
             </div>
           ))}
         </div>
-        <ArrowBtn side="right" onClick={() => ref.current.scrollBy({ left: 320, behavior: "smooth" })} />
+        <ArrowBtn side="left"  onClick={() => ref.current.scrollBy({ left: -320, behavior: "smooth" })} />
+        <ArrowBtn side="right" onClick={() => ref.current.scrollBy({ left:  320, behavior: "smooth" })} />
       </div>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────
-   TRENDING — featured + 3×2 grid
-───────────────────────────────────────── */
-function BookGridSlider({ title, data }) {
+/* ═══════════════════════════════════════════
+   SEARCH RESULTS PANEL
+═══════════════════════════════════════════ */
+function SearchResults({ query, onBookClick }) {
+  const results = searchBooks(query);
+  return (
+    <div className="px-7 mt-8">
+      <h2 className="flex items-center gap-2.5 font-serif font-bold text-xl text-blue-950 mb-2">
+        <AccentBar />Search results for "{query}"
+        <span className="text-sm font-normal text-slate-400">({results.length} found)</span>
+      </h2>
+      {results.length === 0 ? (
+        <div className="text-center py-16 text-slate-400">
+          <div className="text-5xl mb-3">🔍</div>
+          <p className="text-lg font-medium">No books found for "{query}"</p>
+          <p className="text-sm mt-1">Try a different title, author, or genre</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {results.map((b) => (
+            <div key={b.id} onClick={() => onBookClick(b.id)}
+              className="bg-white border border-blue-100 rounded-xl overflow-hidden shadow-sm
+                hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer group">
+              <div className="h-40 overflow-hidden bg-blue-50">
+                <img src={b.imageUrl} alt={b.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => { e.target.src = "https://placehold.co/200x160?text=Book"; }} />
+              </div>
+              <div className="p-3">
+                <p className="font-semibold text-blue-950 text-sm leading-snug">{b.title}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{b.author}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-bold text-blue-700">₹{b.price}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.listingType === "sell" ? "bg-violet-100 text-violet-700" : "bg-teal-100 text-teal-700"}`}>
+                    {b.listingType === "sell" ? "For Sale" : "For Rent"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   BOOK GRID (Trending)
+═══════════════════════════════════════════ */
+function BookGridSlider({ title, data, onBookClick }) {
   const [page, setPage] = useState(0);
   const perPage    = 7;
   const totalPages = Math.ceil(data.length / perPage);
@@ -204,18 +308,17 @@ function BookGridSlider({ title, data }) {
 
   return (
     <div className="px-7 mt-8 relative">
-      <h2 className="flex items-center gap-2.5 font-serif font-bold text-lg text-blue-950 mb-4">
+      <h2 className="flex items-center gap-2.5 font-serif font-bold text-xl text-blue-950 mb-4">
         <AccentBar />{title}
       </h2>
       <div className="flex gap-3 items-stretch">
         {featured && (
-          <div className="flex-shrink-0 w-48 rounded-xl overflow-hidden border border-blue-100
-            shadow-md hover:-translate-y-1 hover:shadow-blue-200 transition-all duration-200">
-            <img
-              src={featured.img} alt={featured.title}
+          <div onClick={() => onBookClick(featured.id)}
+            className="flex-shrink-0 w-48 rounded-xl overflow-hidden border border-blue-100
+              shadow-md hover:-translate-y-1 hover:shadow-blue-200 transition-all duration-200 cursor-pointer">
+            <img src={featured.img} alt={featured.title}
               className="w-full h-full min-h-[280px] object-cover"
-              onError={(e) => { e.target.src = "https://via.placeholder.com/192x280/1d4ed8/ffffff?text=Book"; }}
-            />
+              onError={(e) => { e.target.src = "https://placehold.co/192x280/1d4ed8/ffffff?text=Book"; }} />
           </div>
         )}
         <div className="flex-1 grid grid-cols-3 grid-rows-2 gap-3">
@@ -223,18 +326,15 @@ function BookGridSlider({ title, data }) {
             const book = grid[i];
             if (!book) return <div key={i} className="bg-blue-50 rounded-xl border border-dashed border-blue-200" />;
             return (
-              <div key={i}
-                className="bg-white rounded-xl border border-blue-100 shadow-sm p-3
-                  flex gap-3 items-center hover:-translate-y-1 hover:shadow-md
-                  hover:shadow-blue-100 transition-all duration-200">
-                <img
-                  src={book.img} alt={book.title}
+              <div key={i} onClick={() => onBookClick(book.id)}
+                className="bg-white rounded-xl border border-blue-100 shadow-sm p-3 flex gap-3 items-center
+                  hover:-translate-y-1 hover:shadow-md hover:shadow-blue-100 transition-all duration-200 cursor-pointer">
+                <img src={book.img} alt={book.title}
                   className="w-14 h-20 object-cover rounded-md flex-shrink-0 shadow-sm"
-                  onError={(e) => { e.target.src = "https://via.placeholder.com/56x80/1d4ed8/ffffff?text=Book"; }}
-                />
+                  onError={(e) => { e.target.src = "https://placehold.co/56x80/1d4ed8/ffffff?text=Book"; }} />
                 <div>
-                  <p className="font-semibold text-xs text-blue-950 leading-snug mb-2">{book.title}</p>
-                  <RentBtn />
+                  <p className="font-semibold text-sm text-blue-950 leading-snug mb-2">{book.title}</p>
+                  <RentBtn onClick={(e) => { e.stopPropagation(); onBookClick(book.id); }} />
                 </div>
               </div>
             );
@@ -242,52 +342,36 @@ function BookGridSlider({ title, data }) {
         </div>
       </div>
       <div className="mt-3 h-0.5 bg-blue-100 rounded-full">
-        <div
-          className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-300"
-          style={{ width: `${100 / Math.max(totalPages, 1)}%`, marginLeft: `${page * (100 / Math.max(totalPages, 1))}%` }}
-        />
+        <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-300"
+          style={{ width: `${100 / Math.max(totalPages,1)}%`, marginLeft: `${page * (100 / Math.max(totalPages,1))}%` }} />
       </div>
-      {page > 0 && (
-        <button onClick={() => setPage((p) => p - 1)}
-          className="absolute left-7 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full
-            bg-white border border-blue-100 shadow-md text-blue-600 text-xl
-            hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200
-            flex items-center justify-center">‹</button>
-      )}
-      {page < totalPages - 1 && (
-        <button onClick={() => setPage((p) => p + 1)}
-          className="absolute right-7 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full
-            bg-white border border-blue-100 shadow-md text-blue-600 text-xl
-            hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200
-            flex items-center justify-center">›</button>
-      )}
+      {page > 0            && <ArrowBtn side="left"  onClick={() => setPage(p => p - 1)} />}
+      {page < totalPages-1 && <ArrowBtn side="right" onClick={() => setPage(p => p + 1)} />}
     </div>
   );
 }
 
-/* ─────────────────────────────────────────
+/* ═══════════════════════════════════════════
    ROW SLIDER
-───────────────────────────────────────── */
-function BookRowSlider({ title, data }) {
+═══════════════════════════════════════════ */
+function BookRowSlider({ title, data, onBookClick }) {
   const ref = useRef(null);
   return (
     <div className="px-7 mt-8 relative">
-      <h2 className="flex items-center gap-2.5 font-serif font-bold text-lg text-blue-950 mb-4">
+      <h2 className="flex items-center gap-2.5 font-serif font-bold text-xl text-blue-950 mb-4">
         <AccentBar />{title}
       </h2>
       <div ref={ref} className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
         {data.map((book, i) => (
-          <div key={i}
-            className="min-w-[240px] max-w-[240px] flex-shrink-0 bg-white rounded-xl
-              border border-blue-100 shadow-sm p-3 flex gap-3 items-center
-              hover:-translate-y-1 hover:shadow-md hover:shadow-blue-100 transition-all duration-200">
-            <img
-              src={book.img} alt={book.title}
+          <div key={i} onClick={() => onBookClick && onBookClick(book.id)}
+            className="min-w-[240px] max-w-[240px] flex-shrink-0 bg-white rounded-xl border border-blue-100
+              shadow-sm p-3 flex gap-3 items-center hover:-translate-y-1 hover:shadow-md hover:shadow-blue-100
+              transition-all duration-200 cursor-pointer">
+            <img src={book.img} alt={book.title}
               className="w-[72px] h-24 object-cover rounded-lg flex-shrink-0 shadow-sm"
-              onError={(e) => { e.target.src = "https://via.placeholder.com/72x96/1d4ed8/ffffff?text=Book"; }}
-            />
+              onError={(e) => { e.target.src = "https://placehold.co/72x96/1d4ed8/ffffff?text=Book"; }} />
             <div>
-              <p className="font-semibold text-xs text-blue-950 leading-snug mb-2.5">{book.title}</p>
+              <p className="font-semibold text-sm text-blue-950 leading-snug mb-2.5">{book.title}</p>
               <RentBtn />
             </div>
           </div>
@@ -300,29 +384,25 @@ function BookRowSlider({ title, data }) {
   );
 }
 
-/* ─────────────────────────────────────────
+/* ═══════════════════════════════════════════
    CONDITION SLIDER
-───────────────────────────────────────── */
+═══════════════════════════════════════════ */
 function ConditionSlider({ title, data }) {
   const ref = useRef(null);
   return (
     <div className="px-7 mt-8 relative">
-      <h2 className="flex items-center gap-2.5 font-serif font-bold text-lg text-blue-950 mb-4">
+      <h2 className="flex items-center gap-2.5 font-serif font-bold text-xl text-blue-950 mb-4">
         <AccentBar />{title}
       </h2>
       <div ref={ref} className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
         {data.map((item, i) => (
           <div key={i}
-            className="min-w-[210px] max-w-[210px] flex-shrink-0 bg-white rounded-xl
-              border border-blue-100 overflow-hidden shadow-sm
-              hover:-translate-y-1 hover:shadow-md hover:shadow-blue-100 transition-all duration-200">
-            <img
-              src={item.img} alt={item.title}
-              className="w-full h-32 object-cover"
-              onError={(e) => { e.target.src = `https://via.placeholder.com/210x128/1d4ed8/ffffff?text=${encodeURIComponent(item.title)}`; }}
-            />
+            className="min-w-[210px] max-w-[210px] flex-shrink-0 bg-white rounded-xl border border-blue-100
+              overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200">
+            <img src={item.img} alt={item.title} className="w-full h-32 object-cover"
+              onError={(e) => { e.target.src = `https://placehold.co/210x128/1d4ed8/ffffff?text=${encodeURIComponent(item.title)}`; }} />
             <div className="p-3">
-              <p className="font-semibold text-sm text-blue-950 mb-2">{item.title}</p>
+              <p className="font-semibold text-base text-blue-950 mb-2">{item.title}</p>
               <RentBtn label="Browse" />
             </div>
           </div>
@@ -335,26 +415,22 @@ function ConditionSlider({ title, data }) {
   );
 }
 
-/* ─────────────────────────────────────────
+/* ═══════════════════════════════════════════
    AUTHOR SLIDER
-───────────────────────────────────────── */
-function AuthorSlider() {
+═══════════════════════════════════════════ */
+function AuthorSlider({ onAuthorClick }) {
   const ref = useRef(null);
   return (
     <div className="px-7 mt-6 relative">
       <div ref={ref} className="flex gap-7 overflow-x-auto scrollbar-hide py-2">
-        {authors.map((a, i) => (
-          <div key={i} className="flex flex-col items-center min-w-[90px] cursor-pointer group">
-            <img
-              src={a.img || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&size=80&background=dbeafe&color=1d4ed8&bold=true`}
-              alt={a.name}
+        {AUTHORS.map((a) => (
+          <div key={a.id} onClick={() => onAuthorClick(a.id)}
+            className="flex flex-col items-center min-w-[96px] cursor-pointer group">
+            <img src={a.img} alt={a.name}
               className="w-20 h-20 rounded-full object-cover border-2 border-blue-100
                 group-hover:border-blue-500 group-hover:scale-105 transition-all duration-200 shadow-sm"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&size=80&background=dbeafe&color=1d4ed8&bold=true`;
-              }}
-            />
-            <p className="mt-2 text-center text-xs font-medium text-blue-900 leading-tight">{a.name}</p>
+              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&size=80&background=dbeafe&color=1d4ed8&bold=true`; }} />
+            <p className="mt-2 text-center text-sm font-medium text-blue-900 leading-tight">{a.name}</p>
           </div>
         ))}
       </div>
@@ -364,113 +440,74 @@ function AuthorSlider() {
   );
 }
 
-/* ─────────────────────────────────────────
-   FOOTER
-───────────────────────────────────────── */
-function Footer() {
-  return (
-    <footer className="mt-16 bg-blue-950">
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-400 py-3 flex justify-center">
-        <p className="text-white font-bold text-sm tracking-wide">
-          📚 Over 10 Lakh Books · 2 Lakh Happy Readers · Available Every Day
-        </p>
-      </div>
-      <div className="grid grid-cols-3 gap-10 px-16 py-12 max-w-4xl mx-auto">
-        <div>
-          <div className="flex items-center gap-0.5 font-serif font-black text-2xl mb-3">
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Power</span>
-            <span className="text-white">Xchange</span>
-          </div>
-          <p className="text-blue-300 text-sm leading-relaxed">
-            PowerXchange is an online books and magazine rental service. Discover, borrow, and exchange books with ease.
-          </p>
-          <div className="flex gap-4 mt-5">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:stroke-cyan-300 transition-colors">
-              <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#93c5fd" stroke="none"/>
-            </svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:stroke-cyan-300 transition-colors">
-              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-            </svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:stroke-cyan-300 transition-colors">
-              <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53A4.48 4.48 0 0 0 22.43.36a9 9 0 0 1-2.88 1.1A4.52 4.52 0 0 0 11.89 8a12.82 12.82 0 0 1-9.3-4.71 4.52 4.52 0 0 0 1.4 6.04A4.48 4.48 0 0 1 1.64 9v.06a4.52 4.52 0 0 0 3.62 4.43 4.5 4.5 0 0 1-2.04.08 4.52 4.52 0 0 0 4.22 3.13A9.05 9.05 0 0 1 1 19.54a12.8 12.8 0 0 0 6.92 2.03c8.3 0 12.84-6.88 12.84-12.84 0-.2 0-.39-.01-.58A9.17 9.17 0 0 0 23 3z"/>
-            </svg>
-          </div>
-        </div>
-        <div>
-          <p className="text-cyan-400 text-xs font-bold tracking-widest uppercase mb-4">Information</p>
-          {["Privacy Policy", "Terms & Conditions", "Cancellation & Refund", "Shipping & Delivery", "Account Deletion"].map((item) => (
-            <p key={item} className="text-blue-300 text-sm mb-2.5 cursor-pointer hover:text-cyan-300 transition-colors">{item}</p>
-          ))}
-        </div>
-        <div>
-          <p className="text-cyan-400 text-xs font-bold tracking-widest uppercase mb-4">Resources</p>
-          {["FAQ", "Partner With Us", "Pricing", "Blog"].map((item) => (
-            <p key={item} className="text-blue-300 text-sm mb-2.5 cursor-pointer hover:text-cyan-300 transition-colors">{item}</p>
-          ))}
-        </div>
-      </div>
-      <div className="border-t border-white/10 py-4 text-center">
-        <p className="text-xs text-blue-400/60">
-          © 2025 PowerXchange · Serviced by{" "}
-          <strong className="text-blue-300">BAE SOCIAL PRIVATE LIMITED</strong> · Powered by{" "}
-          <strong className="text-blue-300">CAMPUSCOCREATE VENTURES LLP</strong>
-        </p>
-      </div>
-    </footer>
-  );
-}
-
-/* ─────────────────────────────────────────
-   HOMEPAGE  ← ✅ NOW ACCEPTS PROPS
-───────────────────────────────────────── */
-export default function HomePage({ isLoggedIn, onLogout }) {   // ✅ accept props
+/* ═══════════════════════════════════════════
+   HOMEPAGE
+═══════════════════════════════════════════ */
+export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist }) {
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const [tab, setTab] = useState("books");
+
+  // Read search query from URL e.g. /browse?q=harry
+  const params       = new URLSearchParams(location.search);
+  const searchQuery  = params.get("q") || "";
+
+  const trending = BOOKS.map(b => ({ id: b.id, title: b.title, img: b.imageUrl }));
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
+      <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
 
-      {/* ✅ pass props down to Navbar */}
-      <Navbar
-        isLoggedIn={isLoggedIn}
-        onLogout={onLogout}
-        isProfile={isLoggedIn}
-      />
-
-      <Hero />
-      <GenreStrip />
-
-      {/* Tabs */}
-      <div className="flex justify-center mt-8">
-        <div className="bg-white border border-blue-100 rounded-full p-1 flex gap-1 shadow-sm">
-          {["books", "authors"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-8 py-2 rounded-full text-base font-semibold transition-all duration-200
-                ${tab === t
-                  ? "bg-gradient-to-r from-blue-600 to-cyan-400 text-white shadow-md shadow-blue-200"
-                  : "text-slate-400 hover:text-blue-600"
-                }`}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+      {searchQuery ? (
+        /* ── SEARCH RESULTS VIEW ── */
+        <div className="pb-20">
+          <div className="max-w-6xl mx-auto px-4 pt-6">
+            <button onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-slate-400 hover:text-blue-600 text-sm mb-4 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
             </button>
-          ))}
+          </div>
+          <SearchResults query={searchQuery} onBookClick={(id) => navigate(`/books/${id}`)} />
         </div>
-      </div>
-
-      {/* Content */}
-      {tab === "authors" ? (
-        <AuthorSlider />
       ) : (
+        /* ── NORMAL HOME VIEW ── */
         <>
-          <BookGridSlider  title="Trending Now"              data={trending}    />
-          <BookRowSlider   title="New Arrivals"              data={newArrivals} />
-          <BookRowSlider   title="Kids Special"              data={kids}        />
-          <ConditionSlider title="Choose Your Book Condition" data={condition}  />
+          <Hero onBrowse={() => navigate("/browse")} />
+          <GenreStrip onGenreClick={(name) => navigate(`/genre/${encodeURIComponent(name)}`)} />
+
+          {/* Tabs */}
+          <div className="flex justify-center mt-8">
+            <div className="bg-white border border-blue-100 rounded-full p-1 flex gap-1 shadow-sm">
+              {["books", "authors"].map((t) => (
+                <button key={t} onClick={() => setTab(t)}
+                  className={`px-8 py-2.5 rounded-full text-base font-semibold transition-all duration-200 ${
+                    tab === t
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-400 text-white shadow-md shadow-blue-200"
+                      : "text-slate-400 hover:text-blue-600"
+                  }`}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {tab === "authors" ? (
+            <AuthorSlider onAuthorClick={(id) => navigate(`/author/${id}`)} />
+          ) : (
+            <>
+              <BookGridSlider  title="Trending Now"               data={trending}     onBookClick={(id) => navigate(`/books/${id}`)} />
+              <BookRowSlider   title="New Arrivals"               data={newArrivals}  onBookClick={(id) => navigate(`/books/${id}`)} />
+              <BookRowSlider   title="Kids Special"               data={kidsBooks}    onBookClick={(id) => navigate(`/books/${id}`)} />
+              <ConditionSlider title="Choose Your Book Condition" data={conditionData} />
+            </>
+          )}
+
+          <Footer />
         </>
       )}
-
-      <Footer />
     </div>
   );
 }

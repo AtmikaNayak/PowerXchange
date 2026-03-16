@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+
 
 const listedBooks = [
   { id: 1, title: "H.C. Verma Vol. 1", author: "H.C. Verma", subject: "Physics", status: "available", color: "bg-blue-100 text-blue-700", price: 180, condition: "Good", seller: "Aakanksha Poojari" },
@@ -68,7 +70,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar isprofile={true} />
+      <Navbar isprofile={false} />
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Profile Hero */}
@@ -234,6 +236,7 @@ export default function Profile() {
         )}
 
       </div>
+      <Footer />
     </div>
   );
 }

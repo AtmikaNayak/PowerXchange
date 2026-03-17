@@ -3,10 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-/* ═══════════════════════════════════════════
-   EXPORTED DATA  (BookDetail, AuthorPage, GenrePage import from here)
-═══════════════════════════════════════════ */
-
 export const AUTHORS = [
   { id: "roald-dahl", name: "Roald Dahl",
     img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Roald_Dahl_1954.jpg/240px-Roald_Dahl_1954.jpg",
@@ -97,9 +93,6 @@ export const BOOKS = [
   { id: "b-sm-1", title: "Wise and Otherwise", author: "Sudha Murthy", price: 190, listingType: "sell", condition: "new", genre: "Biography", description: "A collection of 51 real-life stories from Sudha Murthy's experiences travelling across India. New condition, unread.", imageUrl: "https://covers.openlibrary.org/b/id/8114491-M.jpg", available: true, rentedTillNow: 2, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "sudha-murthy", seller: { name: "Kavya R.", college: "RVCE Bangalore", rating: 4.9, totalRatings: 7 }, relatedBooks: [], feedback: [{ id: 1, user: "Deepa N.", college: "Christ University", rating: 5, comment: "Beautifully written. New copy as described.", date: "Feb 2025" }] },
 ];
 
-/* ═══════════════════════════════════════════
-   GENRE DEFINITIONS (with images + ids)
-═══════════════════════════════════════════ */
 export const GENRES = [
   { name: "Biography",    img: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=200&fit=crop" },
   { name: "Arts & Crafts",img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=200&h=200&fit=crop" },
@@ -141,9 +134,6 @@ const conditionData = [
   { title: "Old Copies",     img: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=220&fit=crop" },
 ];
 
-/* ═══════════════════════════════════════════
-   SEARCH HELPER
-═══════════════════════════════════════════ */
 export function searchBooks(query) {
   if (!query) return [];
   const q = query.toLowerCase();
@@ -154,9 +144,6 @@ export function searchBooks(query) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   SHARED UI
-═══════════════════════════════════════════ */
 function AccentBar() {
   return <span className="inline-block w-1 h-5 rounded-sm bg-gradient-to-b from-blue-600 to-cyan-400 flex-shrink-0" />;
 }
@@ -188,9 +175,6 @@ function RentBtn({ label = "Rent", onClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════ */
 function Hero({ onBrowse }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-950 via-blue-700 to-cyan-400
@@ -220,13 +204,11 @@ function Hero({ onBrowse }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   GENRE STRIP (clickable → /genre/:name)
-═══════════════════════════════════════════ */
-function GenreStrip({ onGenreClick }) {
+// ← sectionRef added as prop
+function GenreStrip({ onGenreClick, sectionRef }) {
   const ref = useRef(null);
   return (
-    <div className="px-7 mt-10">
+    <div ref={sectionRef} className="px-7 mt-10">  {/* ← ref attached here */}
       <h2 className="text-center font-serif font-bold text-2xl text-blue-950 mb-6">Browse by Genre</h2>
       <div className="relative">
         <div ref={ref} className="flex gap-5 overflow-x-auto scrollbar-hide px-2 py-1">
@@ -249,9 +231,6 @@ function GenreStrip({ onGenreClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   SEARCH RESULTS PANEL
-═══════════════════════════════════════════ */
 function SearchResults({ query, onBookClick }) {
   const results = searchBooks(query);
   return (
@@ -295,9 +274,6 @@ function SearchResults({ query, onBookClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   BOOK GRID (Trending)
-═══════════════════════════════════════════ */
 function BookGridSlider({ title, data, onBookClick }) {
   const [page, setPage] = useState(0);
   const perPage    = 7;
@@ -351,9 +327,6 @@ function BookGridSlider({ title, data, onBookClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   ROW SLIDER
-═══════════════════════════════════════════ */
 function BookRowSlider({ title, data, onBookClick }) {
   const ref = useRef(null);
   return (
@@ -384,9 +357,6 @@ function BookRowSlider({ title, data, onBookClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   CONDITION SLIDER
-═══════════════════════════════════════════ */
 function ConditionSlider({ title, data }) {
   const ref = useRef(null);
   return (
@@ -415,9 +385,6 @@ function ConditionSlider({ title, data }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   AUTHOR SLIDER
-═══════════════════════════════════════════ */
 function AuthorSlider({ onAuthorClick }) {
   const ref = useRef(null);
   return (
@@ -440,26 +407,21 @@ function AuthorSlider({ onAuthorClick }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   HOMEPAGE
-═══════════════════════════════════════════ */
 export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist }) {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [tab, setTab] = useState("books");
+  const genreRef  = useRef(null);  // ← new ref
 
-  // Read search query from URL e.g. /browse?q=harry
-  const params       = new URLSearchParams(location.search);
-  const searchQuery  = params.get("q") || "";
-
-  const trending = BOOKS.map(b => ({ id: b.id, title: b.title, img: b.imageUrl }));
+  const params      = new URLSearchParams(location.search);
+  const searchQuery = params.get("q") || "";
+  const trending    = BOOKS.map(b => ({ id: b.id, title: b.title, img: b.imageUrl }));
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
       <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
 
       {searchQuery ? (
-        /* ── SEARCH RESULTS VIEW ── */
         <div className="pb-20">
           <div className="max-w-6xl mx-auto px-4 pt-6">
             <button onClick={() => navigate(-1)}
@@ -473,12 +435,16 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
           <SearchResults query={searchQuery} onBookClick={(id) => navigate(`/books/${id}`)} />
         </div>
       ) : (
-        /* ── NORMAL HOME VIEW ── */
         <>
-          <Hero onBrowse={() => navigate("/browse")} />
-          <GenreStrip onGenreClick={(name) => navigate(`/genre/${encodeURIComponent(name)}`)} />
+          {/* ← onBrowse now scrolls to genreRef */}
+          <Hero onBrowse={() => genreRef.current?.scrollIntoView({ behavior: "smooth" })} />
 
-          {/* Tabs */}
+          {/* ← sectionRef passed in */}
+          <GenreStrip
+            sectionRef={genreRef}
+            onGenreClick={(name) => navigate(`/genre/${encodeURIComponent(name)}`)}
+          />
+
           <div className="flex justify-center mt-8">
             <div className="bg-white border border-blue-100 rounded-full p-1 flex gap-1 shadow-sm">
               {["books", "authors"].map((t) => (

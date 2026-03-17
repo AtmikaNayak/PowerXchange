@@ -58,8 +58,8 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
     const [wishlist, setWishlist] = useState(wishlistBooks);
 
     const initialForm = {
-      name: "Aakanksha Poojari",
-      email: "aakanksha@email.com",
+      name: "Atmika Nayak",
+      email: "nnm24cs058@nmamit.in",
       college: "NITK Surathkal",
       location: "Mangaluru, KA",
       bio: "Loves books, hates paying full price for them.",

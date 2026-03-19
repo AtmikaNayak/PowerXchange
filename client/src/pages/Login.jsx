@@ -28,7 +28,7 @@ function Login({ onLogin }) {
 
     if (data.user) {
       if (onLogin) onLogin();
-      navigate("/");
+      navigate("/home");
     }
   };
 

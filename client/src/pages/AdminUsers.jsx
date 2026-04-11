@@ -90,21 +90,27 @@ export default function AdminUsers() {
   }
 
   async function handleDelete(userId) {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone. All their books and transactions will also be deleted.")) {
       return;
     }
 
     setActionLoading(true);
-    const { error } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", userId);
 
-    if (!error) {
-      fetchUsers();
-      setShowModal(false);
-      setSelectedUser(null);
+    // Call the delete function to remove from both profiles and auth.users
+    const { data, error } = await supabase.rpc('delete_user_completely', {
+      user_uuid: userId
+    });
+
+    if (error) {
+      alert("Error deleting user: " + error.message);
+      setActionLoading(false);
+      return;
     }
+
+    alert("User deleted successfully!");
+    fetchUsers();
+    setShowModal(false);
+    setSelectedUser(null);
     setActionLoading(false);
   }
 

@@ -342,3 +342,23 @@ CREATE TRIGGER on_auth_user_created
   );
 
 select role,email, full_name from profiles  
+
+
+
+
+
+
+
+  -- First drop the foreign key constraint
+  ALTER TABLE books                                                                                                                              DROP CONSTRAINT IF EXISTS books_seller_id_fkey;
+                                                                                                                                               
+  -- Find and fix books with invalid seller_id (set to NULL)
+  UPDATE books
+  SET seller_id = NULL
+  WHERE seller_id NOT IN (SELECT id FROM profiles);
+
+  -- Verify the fix
+  SELECT id, title, seller_id, seller_name FROM books;
+
+  -- Now the delete user will work
+  -- The foreign key is removed so there's no constraint violation

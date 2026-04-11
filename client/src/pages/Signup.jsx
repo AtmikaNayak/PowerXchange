@@ -17,20 +17,54 @@ function Signup() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    // First check if user already exists
+    const { data: existingUser } = await supabase.auth.getUser();
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, college }
+        data: { full_name: name, college, usn: '' }
       }
     });
 
-    if (error) {
-      setError(error.message);
+    if (authError) {
+      // Handle "user already registered" error
+      if (authError.message.includes("User already registered") || authError.message.includes("already been registered")) {
+        setError("This email is already registered. Please login instead.");
+      } else {
+        setError(authError.message);
+      }
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
+      return;
+    }
+
+    // Create profile manually (use upsert to handle duplicates)
+    if (authData.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          full_name: name,
+          email: email,
+          college: college,
+          role: 'user',
+          status: 'pending'
+        }, {
+          onConflict: 'id'
+        });
+
+      if (profileError) {
+        if (profileError.message.includes("foreign key")) {
+          setError("This email is already registered. Please login instead.");
+        } else {
+          setError('Database error: ' + profileError.message);
+        }
+        setLoading(false);
+      } else {
+        setSuccess(true);
+        setLoading(false);
+      }
     }
   };
 

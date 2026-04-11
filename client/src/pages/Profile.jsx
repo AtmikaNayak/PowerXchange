@@ -4,28 +4,6 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-const listedBooks = [
-  { id: 1, title: "H.C. Verma Vol. 1", author: "H.C. Verma", subject: "Physics", status: "available", color: "bg-blue-100 text-blue-700", price: 180, condition: "Good", seller: "Aakanksha Poojari" },
-  { id: 2, title: "R.D. Sharma Class 12", author: "R.D. Sharma", subject: "Maths", status: "available", color: "bg-green-100 text-green-700", price: 220, condition: "Like New", seller: "Aakanksha Poojari" },
-  { id: 3, title: "Organic Chemistry", author: "Morrison & Boyd", subject: "Chem", status: "on hold", color: "bg-amber-100 text-amber-700", price: 150, condition: "Fair", seller: "Aakanksha Poojari" },
-  { id: 4, title: "CLRS Algorithms", author: "Cormen et al.", subject: "CS", status: "available", color: "bg-purple-100 text-purple-700", price: 300, condition: "Good", seller: "Aakanksha Poojari" },
-  { id: 5, title: "Campbell Biology", author: "Jane Reece", subject: "Biology", status: "available", color: "bg-red-100 text-red-600", price: 200, condition: "Like New", seller: "Aakanksha Poojari" },
-  { id: 6, title: "Microeconomics", author: "N. Gregory Mankiw", subject: "Econ", status: "sold", color: "bg-teal-100 text-teal-700", price: 120, condition: "Fair", seller: "Aakanksha Poojari" },
-];
-
-const wishlistBooks = [
-  { id: 1, title: "Clean Code", author: "Robert C. Martin", price: 250, condition: "Good", seller: "Rahul Shetty", olid: "OL7353617M" },
-  { id: 2, title: "The Pragmatic Programmer", author: "Hunt & Thomas", price: 200, condition: "Like New", seller: "Priya Nair", olid: "OL7353490M" },
-  { id: 3, title: "Discrete Mathematics", author: "Kenneth Rosen", price: 180, condition: "Fair", seller: "Kiran Bhat", olid: "OL24295682M" },
-  { id: 4, title: "System Design Interview", author: "Alex Xu", price: 300, condition: "Good", seller: "Deepak Kamath", olid: "OL32125489M" },
-];
-
-const history = [
-  { id: 1, type: "exchange", title: "Data Structures in C", with: "Rahul Shetty", date: "Mar 10, 2025" },
-  { id: 2, type: "bought", title: "Operating Systems Concepts", with: "Priya Nair · ₹180", date: "Feb 28, 2025" },
-  { id: 3, type: "sold", title: "Microeconomics", with: "Kiran Bhat · ₹220", date: "Feb 14, 2025" },
-  { id: 4, type: "exchange", title: "JEE Physics Problems", with: "Deepak Kamath", date: "Jan 30, 2025" },
-];
 
 const statusStyles = {
   available: "bg-green-100 text-green-700",
@@ -34,28 +12,15 @@ const statusStyles = {
 };
 
 const historyIcon = { exchange: "⇄", bought: "↓", sold: "↑" };
-const historyBg   = { exchange: "bg-green-100", bought: "bg-blue-100", sold: "bg-amber-100" };
-
-function BookCover({ olid, title }) {
-  const [imgError, setImgError] = useState(false);
-  const coverUrl = `https://covers.openlibrary.org/b/olid/${olid}-M.jpg`;
-  if (!imgError) {
-    return (
-      <img src={coverUrl} alt={title} onError={() => setImgError(true)}
-        className="w-12 h-16 rounded-lg object-cover shrink-0 shadow-sm border border-gray-100" />
-    );
-  }
-  return (
-    <div className="w-12 h-16 rounded-lg bg-purple-100 flex items-center justify-center shrink-0 shadow-sm border border-purple-200">
-      <span className="text-purple-500 font-bold text-lg">{title[0]}</span>
-    </div>
-  );
-}
+const historyBg = { exchange: "bg-green-100", bought: "bg-blue-100", sold: "bg-amber-100" };
 
 export default function Profile({ isLoggedIn, onLogout, cart }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("listed");
-  const [wishlist, setWishlist] = useState(wishlistBooks);
+  const [wishlist, setWishlist] = useState([]);
+  const [listedBooks, setListedBooks] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState({ listed: 0, exchanged: 0, wishlist: 0 });
 
   const [form, setForm] = useState({
     name: "",
@@ -65,23 +30,91 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
     bio: "",
   });
   const [draft, setDraft] = useState(form);
+  const [userId, setUserId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
+  // Fetch user profile and data from database
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+    const loadProfileData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const user = session.user;
+      setUserId(user.id);
+
+      // Fetch profile from database
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profileData) {
         const userData = {
-          name: user.user_metadata?.name || "User",
-          email: user.email || "",
-          college: user.user_metadata?.college || "",
-          location: "",
-          bio: "",
+          name: profileData.full_name || profileData.name || user.user_metadata?.full_name || "User",
+          email: profileData.email || user.email || "",
+          college: profileData.college || user.user_metadata?.college || "",
+          location: profileData.location || "",
+          bio: profileData.bio || "",
         };
         setForm(userData);
         setDraft(userData);
       }
+
+      // Fetch user's listed books
+      const { data: booksData, error: booksError } = await supabase
+        .from("books")
+        .select("*")
+        .eq("seller_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setListedBooks(booksData || []);
+
+      // Fetch wishlist (table might not exist yet)
+      let wishlistData = [];
+      const { data: wd, error: we } = await supabase
+        .from("wishlist")
+        .select("*, books(*)")
+        .eq("user_id", user.id);
+      if (!we && wd) {
+        wishlistData = wd;
+        setWishlist(wd.map(w => ({ ...w.books, wishlistId: w.id })) || []);
+      } else {
+        setWishlist([]);
+      }
+
+      // Fetch transaction history (table might not exist yet)
+      let historyData = [];
+      const { data: td, error: te } = await supabase
+        .from("transactions")
+        .select("*, books(title), buyer:buyer_id(full_name), seller:seller_id(full_name)")
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .order("created_at", { ascending: false });
+      if (!te && td) {
+        historyData = td.map(t => ({
+          id: t.id,
+          type: t.status === "completed" ? "sold" : "exchange",
+          title: t.books?.title || "Book",
+          with: t.buyer_id === user.id
+            ? `From ${t.seller?.full_name || "User"}`
+            : `To ${t.buyer?.full_name || "User"}`,
+          date: new Date(t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          price: t.price
+        }));
+        setHistory(historyData);
+      } else {
+        setHistory([]);
+      }
+
+      setStats({
+        listed: booksData?.length || 0,
+        exchanged: historyData.length || 0,
+        wishlist: wishlistData?.length || 0
+      });
     };
-    getUser();
+
+    loadProfileData();
   }, []);
 
   const tabs = [
@@ -98,6 +131,30 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
 
   const handleBuy = (book) => navigate("/buybook", { state: { book } });
 
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setSaveMessage("");
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: draft.name,
+        college: draft.college,
+        location: draft.location,
+        bio: draft.bio
+      })
+      .eq("id", userId);
+
+    if (error) {
+      setSaveMessage("Error saving profile");
+    } else {
+      setForm(draft);
+      setSaveMessage("Profile saved successfully!");
+    }
+    setSaving(false);
+    setTimeout(() => setSaveMessage(""), 3000);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
@@ -112,9 +169,9 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
             <p className="text-lg font-medium text-gray-900">{form.name || "Loading..."}</p>
             <p className="text-sm text-gray-500 mt-0.5">{form.email} {form.location ? `· ${form.location}` : ""}</p>
             <div className="flex gap-5 mt-2">
-              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">6</span> listed</span>
-              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">3</span> exchanged</span>
-              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{wishlist.length}</span> wishlist</span>
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{stats.listed}</span> listed</span>
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{stats.exchanged}</span> exchanged</span>
+              <span className="text-sm text-gray-500"><span className="font-medium text-gray-900">{stats.wishlist}</span> wishlist</span>
             </div>
           </div>
           <div className="ml-auto flex gap-2">
@@ -150,104 +207,144 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
         {/* My Listed Books */}
         {activeTab === "listed" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {listedBooks.map((book) => (
-              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col">
-                <div className={`w-full h-20 rounded-lg flex items-center justify-center text-xs font-medium mb-3 ${book.color}`}>
-                  {book.subject}
+            {listedBooks.length === 0 ? (
+              <div className="col-span-full text-center text-gray-500 py-8">No books listed yet</div>
+            ) : (
+              listedBooks.map((book) => (
+                <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col">
+                  <div className={`w-full h-20 rounded-lg flex items-center justify-center text-xs font-medium mb-3 bg-indigo-100 text-indigo-700`}>
+                    {book.genre || book.category || "Book"}
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
+                  <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-md ${book.is_available ? statusStyles.available : statusStyles.sold}`}>
+                    {book.is_available ? "available" : "sold"}
+                  </span>
+                  {book.is_available && (
+                    <button onClick={() => handleBuy(book)}
+                      className="mt-3 w-full bg-indigo-600 text-white text-xs py-1.5 rounded-lg hover:bg-indigo-700 transition">
+                      Buy Book
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
-                <span className={`inline-block mt-2 text-xs px-2.5 py-0.5 rounded-md ${statusStyles[book.status]}`}>
-                  {book.status}
-                </span>
-                {book.status === "available" && (
-                  <button onClick={() => handleBuy(book)}
-                    className="mt-3 w-full bg-indigo-600 text-white text-xs py-1.5 rounded-lg hover:bg-indigo-700 transition">
-                    Buy Book
-                  </button>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
         {/* Wishlist */}
         {activeTab === "wishlist" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {wishlist.map((book) => (
-              <div key={book.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4">
-                <BookCover olid={book.olid} title={book.title} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{book.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
-                  <p className="text-xs text-indigo-600 font-semibold mt-1">₹{book.price}</p>
+            {wishlist.length === 0 ? (
+              <div className="text-center text-gray-500 py-8 col-span-full">No books in wishlist</div>
+            ) : (
+              wishlist.map((book, idx) => (
+                <div key={book.wishlistId || book.id || `wishlist-${idx}`} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-12 h-16 rounded-lg bg-purple-100 flex items-center justify-center shrink-0 shadow-sm border border-purple-200">
+                    <span className="text-purple-500 font-bold text-lg">{book.title?.[0] || "B"}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{book.title || "Unknown Book"}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{book.author || "Unknown"}</p>
+                    <p className="text-xs text-indigo-600 font-semibold mt-1">₹{book.price || "N/A"}</p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 items-end shrink-0">
+                    <button onClick={() => handleBuy(book)}
+                      className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition">
+                      Buy Book
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("wishlist").delete().eq("id", book.wishlistId);
+                        setWishlist(wishlist.filter((b) => b.wishlistId !== book.wishlistId));
+                      }}
+                      className="text-gray-400 hover:text-red-500 text-lg leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
-                  <button onClick={() => handleBuy(book)}
-                    className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition">
-                    Buy Book
-                  </button>
-                  <button onClick={() => setWishlist(wishlist.filter((b) => b.id !== book.id))}
-                    className="text-gray-400 hover:text-red-500 text-lg leading-none">
-                    ×
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
         {/* History */}
         {activeTab === "history" && (
           <div className="flex flex-col gap-3">
-            {history.map((item) => (
-              <div key={item.id} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0 ${historyBg[item.type]}`}>
-                  {historyIcon[item.type]}
+            {history.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No transaction history yet</div>
+            ) : (
+              history.map((item) => (
+                <div key={item.id} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0 ${historyBg[item.type]}`}>
+                    {historyIcon[item.type]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {item.with} {item.price ? `· ₹${item.price}` : ""}
+                    </p>
+                  </div>
+                  <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{item.date}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)} · {item.title}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {item.type === "exchange" ? "With" : item.type === "bought" ? "From" : "To"} {item.with}
-                  </p>
-                </div>
-                <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{item.date}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
         {/* Edit Profile */}
         {activeTab === "edit" && (
           <div className="bg-white border border-gray-200 rounded-2xl p-6 max-w-lg">
+            {saveMessage && (
+              <div className={`mb-4 text-sm px-4 py-2 rounded-lg ${
+                saveMessage.includes("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+              }`}>
+                {saveMessage}
+              </div>
+            )}
             {[
               { label: "Full name",             key: "name",     type: "text"  },
-              { label: "Email",                 key: "email",    type: "email" },
+              { label: "Email",                 key: "email",    type: "email", disabled: true },
               { label: "College / Institution", key: "college",  type: "text"  },
               { label: "Location",              key: "location", type: "text"  },
-            ].map(({ label, key, type }) => (
+            ].map(({ label, key, type, disabled }) => (
               <div key={key} className="mb-5">
                 <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
-                <input type={type} value={draft[key]}
+                <input
+                  type={type}
+                  value={draft[key]}
+                  readOnly={disabled}
                   onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300" />
+                  className={`w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 ${
+                    disabled ? "bg-gray-100 text-gray-500" : "bg-gray-50"
+                  }`}
+                />
               </div>
             ))}
             <div className="mb-5">
               <label className="text-xs text-gray-500 block mb-1.5">Bio</label>
-              <textarea rows={3} value={draft.bio}
+              <textarea
+                rows={3}
+                value={draft.bio}
                 onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300 resize-none" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-300 resize-none"
+              />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setForm(draft)}
-                className="bg-gray-900 text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-700 transition">
-                Save changes
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="bg-gray-900 text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save changes"}
               </button>
-              <button onClick={() => setDraft(form)}
-                className="text-sm border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition">
+              <button
+                onClick={() => setDraft(form)}
+                className="text-sm border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
+              >
                 Discard
               </button>
             </div>

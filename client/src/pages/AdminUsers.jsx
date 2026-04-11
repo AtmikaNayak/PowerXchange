@@ -1,0 +1,312 @@
+import { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
+
+export default function AdminUsers() {
+  const navigate = useNavigate();
+  const { userId } = useParams();
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [filter, setFilter] = useState("all"); // all, verified, pending
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    checkAdminAndLoad();
+  }, [filter]);
+
+  async function checkAdminAndLoad() {
+    // Get current session first
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      navigate("/login");
+      return;
+    }
+
+    const user = session.user;
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profileData || profileData.role !== "admin") {
+      navigate("/home");
+      return;
+    }
+
+    // Only fetch users after admin check passes
+    fetchUsers();
+  }
+
+  async function fetchUsers() {
+    setLoading(true);
+    let query = supabase.from("profiles").select("*");
+
+    if (filter === "verified") {
+      query = query.eq("status", "approved");
+    } else if (filter === "pending") {
+      query = query.eq("status", "pending");
+    }
+
+    query = query.order("created_at", { ascending: false });
+
+    const { data, error } = await query;
+    if (!error) {
+      setUsers(data);
+    }
+    setLoading(false);
+  }
+
+  async function handleVerify(userId, isVerified) {
+    setActionLoading(true);
+    const newStatus = isVerified ? "pending" : "approved";
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: newStatus })
+      .eq("id", userId);
+
+    if (!error) {
+      fetchUsers();
+    }
+    setActionLoading(false);
+  }
+
+  async function handleBlock(userId, isBlocked) {
+    setActionLoading(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_blocked: !isBlocked })
+      .eq("id", userId);
+
+    if (!error) {
+      fetchUsers();
+    }
+    setActionLoading(false);
+  }
+
+  async function handleDelete(userId) {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      return;
+    }
+
+    setActionLoading(true);
+    const { error } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+
+    if (!error) {
+      fetchUsers();
+      setShowModal(false);
+      setSelectedUser(null);
+    }
+    setActionLoading(false);
+  }
+
+  const filteredUsers = users.filter((user) =>
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.college?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.usn?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-600">Loading users...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-indigo-700 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div>
+            <Link to="/admin" className="text-indigo-200 hover:text-white">&larr; Back to Dashboard</Link>
+            <h1 className="text-2xl font-bold">User Management</h1>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                filter === "all"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              All Users
+            </button>
+            <button
+              onClick={() => setFilter("verified")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                filter === "verified"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              Verified
+            </button>
+            <button
+              onClick={() => setFilter("pending")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                filter === "pending"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              Pending
+            </button>
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name, email, or college..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full md:w-64"
+          />
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  College
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Joined
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    No users found
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-gray-900">{user.full_name || user.email}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {user.college || "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-orange-100 text-orange-700"
+                        }`}>
+                          {user.status === "approved" ? "Approved" : "Pending"}
+                        </span>
+                        {user.is_blocked && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
+                            Blocked
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleVerify(user.id, user.status === "approved")}
+                          disabled={actionLoading}
+                          className={`px-3 py-1 text-sm rounded-lg transition ${
+                            user.status === "approved"
+                              ? "bg-orange-100 text-orange-600 hover:bg-orange-200"
+                              : "bg-green-100 text-green-600 hover:bg-green-200"
+                          }`}
+                        >
+                          {user.status === "approved" ? "Mark Pending" : "Verify"}
+                        </button>
+                        <button
+                          onClick={() => handleBlock(user.id, user.is_blocked || false)}
+                          disabled={actionLoading}
+                          className={`px-3 py-1 text-sm rounded-lg transition ${
+                            user.is_blocked
+                              ? "bg-green-100 text-green-600 hover:bg-green-200"
+                              : "bg-red-100 text-red-600 hover:bg-red-200"
+                          }`}
+                        >
+                          {user.is_blocked ? "Unblock" : "Block"}
+                        </button>
+                        <button
+                          onClick={() => { setSelectedUser(user); setShowModal(true); }}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      {/* Delete Confirmation Modal */}
+      {showModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete User</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete <strong>{selectedUser.full_name || selectedUser.email}</strong>?
+              This will remove all their data including books and transactions.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowModal(false); setSelectedUser(null); }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(selectedUser.id)}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

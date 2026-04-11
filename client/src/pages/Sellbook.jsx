@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -38,6 +39,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
   const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const filteredAuthors = POPULAR_AUTHORS.filter(
     (a) => authorQuery.length > 0 && a.name.toLowerCase().includes(authorQuery.toLowerCase())
@@ -67,6 +69,60 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     setSelectedAuthor(null);
     setAuthorQuery("");
     setForm({ title: "", author: "", genre: "", condition: "", price: "", description: "", name: "", phone: "", email: "", address: "", city: "", pincode: "" });
+  };
+
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!form.title || !form.author || !form.genre || !form.condition) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setSubmitting(true);
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Please login to sell a book");
+      navigate("/login");
+      return;
+    }
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, college")
+      .eq("id", user.id)
+      .single();
+
+    // Upload image if exists (optional - for now we'll just use a placeholder)
+    let image_url = null;
+    // Image upload can be implemented here using Supabase Storage
+
+    // Insert book into database
+    const { data, error } = await supabase
+      .from("books")
+      .insert({
+        seller_id: user.id,
+        seller_name: profile?.name || form.name,
+        title: form.title,
+        author: form.author,
+        category: form.genre,
+        condition: form.condition,
+        price: parseFloat(form.price) || 0,
+        description: form.description,
+        image_url: image_url,
+        is_approved: false, // Admin needs to approve
+        is_available: true,
+      });
+
+    setSubmitting(false);
+
+    if (error) {
+      alert("Error submitting book: " + error.message);
+    } else {
+      setSubmitted(true);
+    }
   };
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition";
@@ -391,10 +447,11 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
           <div className="flex gap-3 pb-6">
             <button
               type="button"
-              onClick={() => setSubmitted(true)}
-              className="bg-gradient-to-r from-blue-600 to-cyan-400 text-white text-sm font-bold px-8 py-3 rounded-full shadow-md shadow-blue-200 hover:shadow-blue-300 hover:scale-105 transition-all duration-200"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="bg-gradient-to-r from-blue-600 to-cyan-400 text-white text-sm font-bold px-8 py-3 rounded-full shadow-md shadow-blue-200 hover:shadow-blue-300 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit Listing
+              {submitting ? "Submitting..." : "Submit Listing"}
             </button>
             <button
               type="button"

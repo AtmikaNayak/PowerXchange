@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -134,13 +135,13 @@ const conditionData = [
   { title: "Old Copies",     img: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=400&h=220&fit=crop" },
 ];
 
-export function searchBooks(query) {
+export function searchBooks(query, booksToUse = BOOKS) {
   if (!query) return [];
   const q = query.toLowerCase();
-  return BOOKS.filter(b =>
-    b.title.toLowerCase().includes(q) ||
-    b.author.toLowerCase().includes(q) ||
-    b.genre.toLowerCase().includes(q)
+  return booksToUse.filter(b =>
+    b.title?.toLowerCase().includes(q) ||
+    b.author?.toLowerCase().includes(q) ||
+    b.genre?.toLowerCase().includes(q)
   );
 }
 
@@ -231,8 +232,8 @@ function GenreStrip({ onGenreClick, sectionRef }) {
   );
 }
 
-function SearchResults({ query, onBookClick }) {
-  const results = searchBooks(query);
+function SearchResults({ query, onBookClick, booksToUse }) {
+  const results = searchBooks(query, booksToUse);
   return (
     <div className="px-7 mt-8">
       <h2 className="flex items-center gap-2.5 font-serif font-bold text-xl text-blue-950 mb-2">
@@ -411,11 +412,49 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
   const navigate  = useNavigate();
   const location  = useLocation();
   const [tab, setTab] = useState("books");
-  const genreRef  = useRef(null);  // ← new ref
+  const genreRef  = useRef(null);
+  const [dbBooks, setDbBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const params      = new URLSearchParams(location.search);
   const searchQuery = params.get("q") || "";
-  const trending    = BOOKS.map(b => ({ id: b.id, title: b.title, img: b.imageUrl }));
+
+  // Fetch books from database on mount
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { supabase } = await import("../supabase");
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("is_approved", true)
+        .eq("is_available", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setDbBooks(data);
+      }
+      setLoading(false);
+    };
+
+    fetchBooks();
+  }, []);
+
+  // Use database books if available, otherwise fallback to hardcoded
+  const booksToUse = dbBooks.length > 0 ? dbBooks.map(b => ({
+    id: b.id,
+    title: b.title,
+    author: b.author || "Unknown",
+    price: b.price || 0,
+    listingType: b.price === 0 ? "exchange" : "sell",
+    condition: b.condition || "good",
+    genre: b.category || b.genre || "General",
+    description: b.description || "",
+    imageUrl: b.image_url || b.cover_url || "https://placehold.co/200x160?text=Book",
+    available: b.is_available !== false,
+    seller: { name: b.seller_name || "Unknown", college: "N/A" },
+  })) : BOOKS;
+
+  const trending = booksToUse.map(b => ({ id: b.id, title: b.title, img: b.imageUrl || b.cover_url }));
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
@@ -432,7 +471,7 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
               Back
             </button>
           </div>
-          <SearchResults query={searchQuery} onBookClick={(id) => navigate(`/books/${id}`)} />
+          <SearchResults query={searchQuery} onBookClick={(id) => navigate(`/books/${id}`)} booksToUse={booksToUse} />
         </div>
       ) : (
         <>
@@ -464,10 +503,16 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
             <AuthorSlider onAuthorClick={(id) => navigate(`/author/${id}`)} />
           ) : (
             <>
-              <BookGridSlider  title="Trending Now"               data={trending}     onBookClick={(id) => navigate(`/books/${id}`)} />
-              <BookRowSlider   title="New Arrivals"               data={newArrivals}  onBookClick={(id) => navigate(`/books/${id}`)} />
-              <BookRowSlider   title="Kids Special"               data={kidsBooks}    onBookClick={(id) => navigate(`/books/${id}`)} />
-              <ConditionSlider title="Choose Your Book Condition" data={conditionData} />
+              {loading ? (
+                <div className="text-center py-20 text-gray-500">Loading books...</div>
+              ) : (
+                <>
+                  <BookGridSlider  title="Trending Now"               data={trending}     onBookClick={(id) => navigate(`/books/${id}`)} />
+                  <BookRowSlider   title="New Arrivals"               data={newArrivals}  onBookClick={(id) => navigate(`/books/${id}`)} />
+                  <BookRowSlider   title="Kids Special"               data={kidsBooks}    onBookClick={(id) => navigate(`/books/${id}`)} />
+                  <ConditionSlider title="Choose Your Book Condition" data={conditionData} />
+                </>
+              )}
             </>
           )}
 

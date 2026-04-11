@@ -28,7 +28,19 @@ function Login({ onLogin }) {
 
     if (data.user) {
       if (onLogin) onLogin();
-      navigate("/home");
+
+      // Check if user is an admin by looking at their role in profiles
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileData?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
     }
   };
 

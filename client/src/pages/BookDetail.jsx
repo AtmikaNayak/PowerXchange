@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabase";
 import Navbar from "./Navbar";
-import { BOOKS, AUTHORS } from "./HomePage";
 import Footer from "./Footer";
 
 function StarRating({ rating, size = "sm" }) {
@@ -36,12 +37,54 @@ function StatCard({ icon, label, value }) {
 export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const book   = BOOKS.find((b) => b.id === id) ?? BOOKS[0];
-  const author = book.authorId ? AUTHORS.find((a) => a.id === book.authorId) : null;
+  useEffect(() => {
+    const fetchBook = async () => {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*, profiles(name, college, is_verified)")
+        .eq("id", id)
+        .single();
 
-  const inCart      = cart?.find(b => b.id === book.id);
-  const inWishlist  = wishlist?.find(b => b.id === book.id);
+      if (!error && data) {
+        setBook({
+          ...data,
+          imageUrl: data.image_url || "https://placehold.co/200x160?text=Book",
+          listingType: data.price === 0 ? "exchange" : "sell",
+          genre: data.category,
+          available: data.is_available,
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchBook();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading book details...</div>
+      </div>
+    );
+  }
+
+  if (!book) {
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-4">📚</div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Book not found</h2>
+          <p className="text-gray-500 mb-4">This book may have been removed or is pending approval.</p>
+          <button onClick={() => navigate("/home")} className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+            Browse Books
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const conditionStyle = CONDITION_STYLES[book.condition] ?? CONDITION_STYLES.acceptable;
 
@@ -93,13 +136,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
               </div>
               <h1 className="text-3xl font-bold leading-snug text-blue-950">{book.title}</h1>
               <p className="text-slate-400 mt-1 text-base">
-                by{" "}
-                {author ? (
-                  <span onClick={() => navigate(`/author/${author.id}`)}
-                    className="text-blue-600 cursor-pointer hover:underline font-medium">{book.author}</span>
-                ) : (
-                  <span className="text-slate-600">{book.author}</span>
-                )}
+                by <span className="text-slate-600">{book.author}</span>
               </p>
             </div>
 
@@ -115,31 +152,26 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
               <p className="text-slate-600 text-base leading-relaxed">{book.description}</p>
             </div>
 
-            {/* Stats */}
-            <div className="flex gap-3">
-              <StatCard icon="🔄" label="Times Rented"     value={book.rentedTillNow} />
-              <StatCard icon="📖" label="Avg Reading Time" value={book.avgReadingTime} />
-              <StatCard icon="📅" label="Avg Renting Time" value={book.avgRentingTime} />
-            </div>
-
             {/* Seller */}
             <div className="bg-white border border-blue-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                  {book.seller.name[0]}
+                  {(book.profiles?.name || book.seller_name || "S")[0]}
                 </div>
                 <div>
-                  <p className="font-semibold text-blue-950 text-base">{book.seller.name}</p>
-                  <p className="text-sm text-slate-400">{book.seller.college}</p>
+                  <p className="font-semibold text-blue-950 text-base">{book.profiles?.name || book.seller_name || "Seller"}</p>
+                  <p className="text-sm text-slate-400">{book.profiles?.college || "N/A"}</p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <StarRating rating={book.seller.rating} />
-                    <span className="text-sm text-slate-400">({book.seller.totalRatings})</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      book.profiles?.is_verified
+                        ? "bg-green-100 text-green-700"
+                        : "bg-orange-100 text-orange-700"
+                    }`}>
+                      {book.profiles?.is_verified ? "Verified Seller" : "Unverified"}
+                    </span>
                   </div>
                 </div>
               </div>
-              <button className="text-base text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                View profile →
-              </button>
             </div>
 
             {/* Actions */}
@@ -147,10 +179,19 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
               <button
                 onClick={() => navigate("/buybook", { state: { book } })}
                 className="w-full py-3.5 rounded-xl font-semibold text-base bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200">
-                {book.listingType === "sell" ? "Buy Now" : "Rent Now"}
+                {book.listingType === "sell" || book.price > 0 ? "Buy Now" : "Contact Seller"}
               </button>
               <button
-                onClick={() => inCart ? removeFromCart(book.id) : addToCart(book)}
+                onClick={() => {
+                  const bookData = {
+                    id: book.id,
+                    title: book.title,
+                    author: book.author,
+                    price: book.price,
+                    imageUrl: book.image_url,
+                  };
+                  inCart ? removeFromCart(book.id) : addToCart(bookData);
+                }}
                 className={`w-full py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
                   inCart ? "bg-blue-950 text-white border-blue-950" : "border-blue-200 text-blue-700 hover:bg-blue-50"
                 }`}>

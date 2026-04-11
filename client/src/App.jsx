@@ -10,6 +10,10 @@ import BuyBook    from "./pages/Buybook";
 import AuthorPage from "./pages/AuthorPage";
 import GenrePage  from "./pages/GenrePage";
 import SellBook   from "./pages/Sellbook";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminBooks from "./pages/AdminBooks";
+import AdminTransactions from "./pages/AdminTransactions";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,6 +45,10 @@ export default function App() {
         <Route path="/author/:id"  element={guard(<AuthorPage {...sharedProps} />)} />
         <Route path="/genre/:name" element={guard(<GenrePage  {...sharedProps} />)} />
         <Route path="/sellbook"    element={guard(<SellBook {...sharedProps} />)} />
+        <Route path="/admin"       element={guard(<AdminDashboard {...sharedProps} />)} />
+        <Route path="/admin/users" element={guard(<AdminUsers {...sharedProps} />)} />
+        <Route path="/admin/books" element={guard(<AdminBooks {...sharedProps} />)} />
+        <Route path="/admin/transactions" element={guard(<AdminTransactions {...sharedProps} />)} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

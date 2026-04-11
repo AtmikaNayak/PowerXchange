@@ -17,7 +17,9 @@ export default function AdminBooks() {
 
   async function fetchBooks() {
     setLoading(true);
-    let query = supabase.from("books").select("*, profiles(name, college)");
+
+    // First try without the profiles join to see if books exist
+    let query = supabase.from("books").select("*");
 
     if (filter === "approved") {
       query = query.eq("is_approved", true);
@@ -28,8 +30,13 @@ export default function AdminBooks() {
     query = query.order("created_at", { ascending: false });
 
     const { data, error } = await query;
-    if (!error) {
-      setBooks(data);
+
+    if (error) {
+      console.error("Error fetching books:", error);
+      alert("Error loading books: " + error.message);
+    } else {
+      console.log("Fetched books:", data);
+      setBooks(data || []);
     }
     setLoading(false);
   }
@@ -169,7 +176,7 @@ export default function AdminBooks() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-3">
-                    <p>Seller: {book.profiles?.name || book.seller_name || "Unknown"}</p>
+                    <p>Seller: {book.profiles?.full_name || book.seller_name || "Unknown"}</p>
                     <p>College: {book.profiles?.college || "N/A"}</p>
                   </div>
                   <p className="text-xs text-gray-400 mb-4">

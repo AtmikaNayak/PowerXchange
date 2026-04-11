@@ -71,6 +71,27 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     setForm({ title: "", author: "", genre: "", condition: "", price: "", description: "", name: "", phone: "", email: "", address: "", city: "", pincode: "" });
   };
 
+  const uploadImage = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `book_images/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('book-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('book-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleSubmit = async () => {
     // Validate required fields
     if (!form.title || !form.author || !form.genre || !form.condition) {
@@ -80,48 +101,58 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
     setSubmitting(true);
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Please login to sell a book");
-      navigate("/login");
-      return;
-    }
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Please login to sell a book");
+        navigate("/login");
+        return;
+      }
 
-    // Get user profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, college")
-      .eq("id", user.id)
-      .single();
+      // Get user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, college")
+        .eq("id", user.id)
+        .single();
 
-    // Upload image if exists (optional - for now we'll just use a placeholder)
-    let image_url = null;
-    // Image upload can be implemented here using Supabase Storage
+      // Upload image if exists
+      let image_url = null;
+      const fileInput = fileInputRef.current;
+      if (fileInput?.files?.[0]) {
+        image_url = await uploadImage(fileInput.files[0]);
+      }
 
-    // Insert book into database
-    const { data, error } = await supabase
-      .from("books")
-      .insert({
-        seller_id: user.id,
-        seller_name: profile?.name || form.name,
-        title: form.title,
-        author: form.author,
-        category: form.genre,
-        condition: form.condition,
-        price: parseFloat(form.price) || 0,
-        description: form.description,
-        image_url: image_url,
-        is_approved: false, // Admin needs to approve
-        is_available: true,
-      });
+      // Insert book into database with all seller information
+      const { data, error } = await supabase
+        .from("books")
+        .insert({
+          seller_id: user.id,
+          seller_name: form.name || profile?.full_name,
+          seller_phone: form.phone,
+          seller_email: form.email,
+          seller_address: form.address,
+          seller_city: form.city,
+          seller_pincode: form.pincode,
+          title: form.title,
+          author: form.author,
+          genre: form.genre,
+          condition: form.condition,
+          price: parseFloat(form.price) || 0,
+          description: form.description,
+          image_url: image_url,
+          is_approved: false,
+          is_available: true,
+        });
 
-    setSubmitting(false);
+      if (error) throw error;
 
-    if (error) {
-      alert("Error submitting book: " + error.message);
-    } else {
       setSubmitted(true);
+    } catch (err) {
+      alert("Error submitting book: " + err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 

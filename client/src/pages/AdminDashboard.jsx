@@ -12,9 +12,12 @@ export default function AdminDashboard() {
     totalBooks: 0,
     approvedBooks: 0,
     pendingBooks: 0,
+    totalAuthors: 0,
+    pendingAuthors: 0,
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [pendingAuthors, setPendingAuthors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +41,10 @@ export default function AdminDashboard() {
       pendingCountRes,
       booksCountRes,
       recentUsersRes,
-      pendingUsersRes
+      pendingUsersRes,
+      authorsCountRes,
+      pendingAuthorsRes,
+      pendingAuthorsListRes
     ] = await Promise.all([
       supabase.from("profiles").select("full_name, email, role").eq("id", user.id).single(),
       supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -47,6 +53,9 @@ export default function AdminDashboard() {
       supabase.from("books").select("*", { count: "exact", head: true }),
       supabase.from("profiles").select("id, full_name, email, status, college, usn, created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("profiles").select("id, full_name, email, status, college, usn").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
+      supabase.from("authors").select("*", { count: "exact", head: true }),
+      supabase.from("authors").select("*", { count: "exact", head: true }).eq("is_approved", false),
+      supabase.from("authors").select("id, name, genre, created_at").eq("is_approved", false).order("created_at", { ascending: false }).limit(5),
     ]);
 
     if (profileRes.error || !profileRes.data || profileRes.data.role !== "admin") {
@@ -62,9 +71,12 @@ export default function AdminDashboard() {
       totalBooks: booksCountRes.count || 0,
       approvedBooks: 0,
       pendingBooks: 0,
+      totalAuthors: authorsCountRes.count || 0,
+      pendingAuthors: pendingAuthorsRes.count || 0,
     });
     setRecentUsers(recentUsersRes.data || []);
     setPendingVerifications(pendingUsersRes.data || []);
+    setPendingAuthors(pendingAuthorsListRes.data || []);
     setLoading(false);
   }
 
@@ -151,6 +163,12 @@ export default function AdminDashboard() {
                 Manage Users
               </Link>
               <Link
+                to="/admin/authors"
+                className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition text-sm font-medium"
+              >
+                Manage Authors
+              </Link>
+              <Link
                 to="/admin/books"
                 className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition text-sm font-medium"
               >
@@ -167,7 +185,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Users */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -219,6 +237,36 @@ export default function AdminDashboard() {
                     </div>
                     <Link
                       to={`/admin/users/${user.id}`}
+                      className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Pending Authors */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-700">Pending Authors</h3>
+              <Link to="/admin/authors" className="text-indigo-600 text-sm hover:underline">
+                View All
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {pendingAuthors.length === 0 ? (
+                <p className="text-gray-500 text-sm">No pending authors!</p>
+              ) : (
+                pendingAuthors.map((author) => (
+                  <div key={author.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-800">{author.name}</p>
+                      <p className="text-sm text-gray-500">{author.genre || "No genre"}</p>
+                    </div>
+                    <Link
+                      to="/admin/authors"
                       className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition"
                     >
                       Review

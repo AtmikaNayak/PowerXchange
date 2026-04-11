@@ -1,15 +1,47 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
 import Navbar from "./Navbar";
-import { BOOKS, GENRES } from "./HomePage";
+import { GENRES } from "./HomePage";
 import Footer from "./Footer";
 
 export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToCart, addToWishlist }) {
   const { name }  = useParams();
   const navigate  = useNavigate();
   const genreName = decodeURIComponent(name);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Try to find genre in hardcoded GENRES for the image
   const genre  = GENRES.find(g => g.name.toLowerCase() === genreName.toLowerCase());
-  const books  = BOOKS.filter(b => b.genre.toLowerCase() === genreName.toLowerCase());
+  const genreImage = genre?.img || `https://ui-avatars.com/api/?name=${encodeURIComponent(genreName)}&size=96&background=dbeafe&color=1d4ed8&bold=true`;
+
+  useEffect(() => {
+    fetchBooks();
+  }, [name]);
+
+  async function fetchBooks() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("books")
+      .select(`
+        *,
+        authors (
+          id,
+          name,
+          is_approved
+        )
+      `)
+      .eq("is_approved", true)
+      .eq("is_available", true)
+      .eq("authors.is_approved", true)
+      .ilike("genre", genreName);
+
+    if (!error && data) {
+      setBooks(data);
+    }
+    setLoading(false);
+  }
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
@@ -28,12 +60,10 @@ export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToC
 
         {/* Genre Header */}
         <div className="flex items-center gap-6 mb-10">
-          {genre && (
-            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-blue-100 shadow-md flex-shrink-0">
-              <img src={genre.img} alt={genreName} className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(genreName)}&size=96&background=dbeafe&color=1d4ed8`; }} />
-            </div>
-          )}
+          <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-blue-100 shadow-md flex-shrink-0">
+            <img src={genreImage} alt={genreName} className="w-full h-full object-cover"
+              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(genreName)}&size=96&background=dbeafe&color=1d4ed8`; }} />
+          </div>
           <div>
             <p className="text-sm font-bold uppercase tracking-widest text-blue-400 mb-1">Genre</p>
             <h1 className="text-4xl font-bold text-blue-950">{genreName}</h1>
@@ -44,14 +74,16 @@ export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToC
         </div>
 
         {/* Books Grid */}
-        {books.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-20 text-gray-500">Loading books...</div>
+        ) : books.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {books.map((book) => (
               <div key={book.id} onClick={() => navigate(`/books/${book.id}`)}
                 className="bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-sm
                   hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer group">
                 <div className="h-48 overflow-hidden bg-blue-50">
-                  <img src={book.imageUrl} alt={book.title}
+                  <img src={book.image_url || "https://placehold.co/200x192?text=Book"} alt={book.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => { e.target.src = "https://placehold.co/200x192?text=Book"; }} />
                 </div>
@@ -61,9 +93,12 @@ export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToC
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-lg font-bold text-blue-700">₹{book.price}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                      book.listingType === "sell" ? "bg-violet-100 text-violet-700" : "bg-teal-100 text-teal-700"
+                      book.condition === "Brand New" ? "bg-green-100 text-green-700" :
+                      book.condition === "Like New" ? "bg-blue-100 text-blue-700" :
+                      book.condition === "Good Condition" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-orange-100 text-orange-700"
                     }`}>
-                      {book.listingType === "sell" ? "For Sale" : "For Rent"}
+                      {book.condition}
                     </span>
                   </div>
                   {/* Quick-add buttons */}

@@ -208,13 +208,39 @@ function Hero({ onBrowse }) {
 // ← sectionRef added as prop
 function GenreStrip({ onGenreClick, sectionRef }) {
   const ref = useRef(null);
+  const [dbGenres, setDbGenres] = useState([]);
+
+  useEffect(() => {
+    const fetchGenres = async () => {
+      const { supabase } = await import("../supabase");
+      const { data, error } = await supabase
+        .from("books")
+        .select("genre")
+        .eq("is_approved", true)
+        .eq("is_available", true);
+
+      if (!error && data) {
+        // Get unique genres from books
+        const uniqueGenres = [...new Set(data.map(b => b.genre).filter(g => g))];
+        setDbGenres(uniqueGenres.map(g => ({
+          name: g,
+          img: `https://ui-avatars.com/api/?name=${encodeURIComponent(g)}&size=80&background=dbeafe&color=1d4ed8&bold=true`
+        })));
+      }
+    };
+
+    fetchGenres();
+  }, []);
+
+  const genresToShow = dbGenres.length > 0 ? dbGenres : GENRES;
+
   return (
-    <div ref={sectionRef} className="px-7 mt-10">  {/* ← ref attached here */}
+    <div ref={sectionRef} className="px-7 mt-10">
       <h2 className="text-center font-serif font-bold text-2xl text-blue-950 mb-6">Browse by Genre</h2>
       <div className="relative">
         <div ref={ref} className="flex gap-5 overflow-x-auto scrollbar-hide px-2 py-1">
-          {GENRES.map((g) => (
-            <div key={g.name} onClick={() => onGenreClick(g.name)}
+          {genresToShow.map((g) => (
+            <div key={g.name} onClick={() => onGenreClick && onGenreClick(g.name)}
               className="flex flex-col items-center min-w-[96px] cursor-pointer group">
               <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-100
                 group-hover:border-blue-500 group-hover:scale-105 transition-all duration-200 shadow-sm">
@@ -358,7 +384,7 @@ function BookRowSlider({ title, data, onBookClick }) {
   );
 }
 
-function ConditionSlider({ title, data }) {
+function ConditionSlider({ title, data, onConditionClick }) {
   const ref = useRef(null);
   return (
     <div className="px-7 mt-8 relative">
@@ -368,8 +394,9 @@ function ConditionSlider({ title, data }) {
       <div ref={ref} className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
         {data.map((item, i) => (
           <div key={i}
+            onClick={() => onConditionClick && onConditionClick(item.title)}
             className="min-w-[210px] max-w-[210px] flex-shrink-0 bg-white rounded-xl border border-blue-100
-              overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200">
+              overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer">
             <img src={item.img} alt={item.title} className="w-full h-32 object-cover"
               onError={(e) => { e.target.src = `https://placehold.co/210x128/1d4ed8/ffffff?text=${encodeURIComponent(item.title)}`; }} />
             <div className="p-3">
@@ -388,13 +415,34 @@ function ConditionSlider({ title, data }) {
 
 function AuthorSlider({ onAuthorClick }) {
   const ref = useRef(null);
+  const [dbAuthors, setDbAuthors] = useState([]);
+
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      const { supabase } = await import("../supabase");
+      const { data, error } = await supabase
+        .from("authors")
+        .select("*")
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setDbAuthors(data);
+      }
+    };
+
+    fetchAuthors();
+  }, []);
+
+  const authorsToShow = dbAuthors.length > 0 ? dbAuthors : AUTHORS;
+
   return (
     <div className="px-7 mt-6 relative">
       <div ref={ref} className="flex gap-7 overflow-x-auto scrollbar-hide py-2">
-        {AUTHORS.map((a) => (
+        {authorsToShow.map((a) => (
           <div key={a.id} onClick={() => onAuthorClick(a.id)}
             className="flex flex-col items-center min-w-[96px] cursor-pointer group">
-            <img src={a.img} alt={a.name}
+            <img src={a.photo_url || a.img} alt={a.name}
               className="w-20 h-20 rounded-full object-cover border-2 border-blue-100
                 group-hover:border-blue-500 group-hover:scale-105 transition-all duration-200 shadow-sm"
               onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&size=80&background=dbeafe&color=1d4ed8&bold=true`; }} />
@@ -425,9 +473,17 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
       const { supabase } = await import("../supabase");
       const { data, error } = await supabase
         .from("books")
-        .select("*")
+        .select(`
+          *,
+          authors (
+            id,
+            name,
+            is_approved
+          )
+        `)
         .eq("is_approved", true)
         .eq("is_available", true)
+        .eq("authors.is_approved", true)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
@@ -509,8 +565,7 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
                 <>
                   <BookGridSlider  title="Trending Now"               data={trending}     onBookClick={(id) => navigate(`/books/${id}`)} />
                   <BookRowSlider   title="New Arrivals"               data={newArrivals}  onBookClick={(id) => navigate(`/books/${id}`)} />
-                  <BookRowSlider   title="Kids Special"               data={kidsBooks}    onBookClick={(id) => navigate(`/books/${id}`)} />
-                  <ConditionSlider title="Choose Your Book Condition" data={conditionData} />
+                  <ConditionSlider title="Choose Your Book Condition" data={conditionData} onConditionClick={(cond) => navigate(`/condition/${encodeURIComponent(cond)}`)} />
                 </>
               )}
             </>

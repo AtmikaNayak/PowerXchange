@@ -11,6 +11,7 @@ export default function AdminUsers() {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     checkAdminAndLoad();
@@ -74,17 +75,24 @@ export default function AdminUsers() {
   }
 
   async function handleDelete(userId) {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!userId) {
+      alert("Invalid user ID");
+      return;
+    }
     setActionLoading(true);
     const { error } = await supabase
       .from("profiles")
       .delete()
       .eq("id", userId);
-    if (!error) {
+    if (error) {
+      alert("Error deleting user: " + error.message);
+    } else {
+      alert("User deleted successfully!");
       fetchUsers();
-      setShowModal(false);
-      setSelectedUser(null);
     }
+    setShowModal(false);
+    setShowDeleteConfirm(false);
+    setSelectedUser(null);
     setActionLoading(false);
   }
 
@@ -272,10 +280,38 @@ export default function AdminUsers() {
       {showModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-xl p-6 max-w-3xl mx-4 my-8 w-full">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-xl font-bold text-gray-900">User Details</h3>
-              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            </div>
+            {showDeleteConfirm ? (
+              // Delete Confirmation View
+              <>
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Delete User</h3>
+                  <button onClick={() => setShowDeleteConfirm(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete <strong>{selectedUser.full_name}</strong> ({selectedUser.email})?
+                  <br />
+                  <span className="text-red-600 text-sm">This action cannot be undone. All their books and data will be deleted.</span>
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selectedUser.id)}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {actionLoading ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              // User Details View
+              <>
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">User Details</h3>
+                  <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
 
             <div className="space-y-6">
               {/* Profile Section */}
@@ -393,12 +429,14 @@ export default function AdminUsers() {
                 {selectedUser.is_blocked ? "Unblock" : "Block"}
               </button>
               <button
-                onClick={() => setSelectedUser({ id: selectedUser.id, full_name: selectedUser.full_name })}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Delete
               </button>
             </div>
+            </>
+            )}
           </div>
         </div>
       )}

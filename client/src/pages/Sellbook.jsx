@@ -4,6 +4,10 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
+const CATEGORIES = [
+  "Textbook", "Reference Book", "Novel", "Guide", "Manual", "Other"
+];
+
 const GENRES = [
   "Fiction", "Non-Fiction", "Science", "Mathematics", "Engineering",
   "Medicine", "History", "Philosophy", "Economics", "Computer Science",
@@ -21,7 +25,7 @@ const POPULAR_AUTHORS = [
   { name: "Jane Reece",        field: "Biology",       wiki: "https://en.wikipedia.org/wiki/Jane_B._Reece" },
 ];
 
-const CONDITIONS = ["Like New", "Good", "Fair", "Worn"];
+const CONDITIONS = ["Brand New", "Like New", "Good Condition", "Old Copies"];
 
 export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
   const navigate = useNavigate();
@@ -40,6 +44,16 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
   const [submitted, setSubmitted] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [authorExists, setAuthorExists] = useState(null);
+  const [showAuthorModal, setShowAuthorModal] = useState(false);
+  const [authorDetails, setAuthorDetails] = useState({
+    photo: "",
+    description: "",
+    genre: "",
+  });
+  const [authorPhotoFile, setAuthorPhotoFile] = useState(null);
+  const [authorPhotoPreview, setAuthorPhotoPreview] = useState(null);
+  const authorPhotoRef = useRef(null);
 
   const filteredAuthors = POPULAR_AUTHORS.filter(
     (a) => authorQuery.length > 0 && a.name.toLowerCase().includes(authorQuery.toLowerCase())
@@ -92,17 +106,55 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     return publicUrl;
   };
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!form.title || !form.author || !form.genre || !form.condition) {
-      alert("Please fill in all required fields");
+  const handleAuthorCheck = async () => {
+    if (!form.author.trim()) {
+      alert("Please enter an author name");
       return;
     }
 
     setSubmitting(true);
 
+    // Check if author already exists (case-insensitive)
+    const { data: existingAuthor } = await supabase
+      .from("authors")
+      .select("id, name")
+      .ilike("name", form.author.trim())
+      .single();
+
+    if (existingAuthor) {
+      // Author exists - just link book to existing author
+      await submitBookWithAuthor(existingAuthor.id);
+    } else {
+      // Author doesn't exist - show modal to create new author
+      setShowAuthorModal(true);
+    }
+
+    setSubmitting(false);
+  };
+
+  const uploadAuthorPhoto = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `author_photos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('book-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('book-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const submitBookWithAuthor = async (authorId) => {
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         alert("Please login to sell a book");
@@ -110,33 +162,30 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
         return;
       }
 
-      // Get user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, college")
+        .select("full_name, email")
         .eq("id", user.id)
         .single();
 
-      // Upload image if exists
       let image_url = null;
       const fileInput = fileInputRef.current;
       if (fileInput?.files?.[0]) {
         image_url = await uploadImage(fileInput.files[0]);
       }
 
-      // Insert book into database with all seller information
       const { data, error } = await supabase
         .from("books")
         .insert({
           seller_id: user.id,
           seller_name: form.name || profile?.full_name,
           seller_phone: form.phone,
-          seller_email: form.email,
+          seller_email: form.email || profile?.email,
           seller_address: form.address,
           seller_city: form.city,
           seller_pincode: form.pincode,
           title: form.title,
-          author: form.author,
+          author_id: authorId,
           genre: form.genre,
           condition: form.condition,
           price: parseFloat(form.price) || 0,
@@ -147,13 +196,56 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
         });
 
       if (error) throw error;
-
       setSubmitted(true);
     } catch (err) {
       alert("Error submitting book: " + err.message);
+    }
+  };
+
+  const handleCreateAuthorAndBook = async () => {
+    if (!authorDetails.description || !authorDetails.genre) {
+      alert("Please fill in author description and genre");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      let photoUrl = null;
+      if (authorPhotoFile) {
+        photoUrl = await uploadAuthorPhoto(authorPhotoFile);
+      }
+
+      // Create new author with details
+      const { data: newAuthor, error: authorError } = await supabase
+        .from("authors")
+        .insert({
+          name: form.author,
+          photo_url: photoUrl,
+          description: authorDetails.description,
+          genre: authorDetails.genre,
+        })
+        .select("id")
+        .single();
+
+      if (authorError) throw authorError;
+
+      setShowAuthorModal(false);
+      await submitBookWithAuthor(newAuthor.id);
+    } catch (err) {
+      alert("Error creating author: " + err.message);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.author || !form.genre || !form.condition || !form.price) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    await handleAuthorCheck();
   };
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition";
@@ -182,6 +274,117 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
             >
               List Another
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Author Modal
+  if (showAuthorModal) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
+        <div className="flex items-center justify-center min-h-[80vh] px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl mx-auto mb-3">
+                ✍️
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">New Author Found!</h2>
+              <p className="text-gray-500 text-sm mt-2">
+                <strong>{form.author}</strong> is not in our database yet.
+              </p>
+              <p className="text-gray-500 text-sm">
+                Add details to create this author. Your book will be listed after admin approval.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Author Photo */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Author Photo (optional)</label>
+                <div
+                  onClick={() => authorPhotoRef.current?.click()}
+                  className="relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 h-32 bg-gray-50 hover:border-blue-300 hover:bg-blue-50"
+                >
+                  {authorPhotoPreview ? (
+                    <img src={authorPhotoPreview} alt="Author Preview" className="h-full w-full object-contain rounded-xl p-2" />
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl mx-auto mb-1">
+                        👤
+                      </div>
+                      <p className="text-xs font-medium text-gray-600">Click to upload author photo</p>
+                      <p className="text-xs text-gray-400">PNG, JPG up to 2MB</p>
+                    </div>
+                  )}
+                </div>
+                {authorPhotoPreview && (
+                  <button
+                    type="button"
+                    onClick={() => { setAuthorPhotoPreview(null); setAuthorPhotoFile(null); }}
+                    className="mt-2 text-xs text-red-500 hover:text-red-700 transition"
+                  >
+                    Remove photo
+                  </button>
+                )}
+                <input
+                  ref={authorPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setAuthorPhotoFile(file);
+                      setAuthorPhotoPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Author Genre */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1">Author's Genre/Field</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Fiction, Science, Mathematics"
+                  value={authorDetails.genre}
+                  onChange={(e) => setAuthorDetails({ ...authorDetails, genre: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Author Description */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1">About the Author</label>
+                <textarea
+                  rows={3}
+                  placeholder="Brief description about the author..."
+                  value={authorDetails.description}
+                  onChange={(e) => setAuthorDetails({ ...authorDetails, description: e.target.value })}
+                  className={inputClass + " resize-none"}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleCreateAuthorAndBook}
+                  disabled={submitting}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {submitting ? "Creating..." : "Create Author & Submit"}
+                </button>
+                <button
+                  onClick={() => { setShowAuthorModal(false); setAuthorExists(null); }}
+                  className="px-6 py-2.5 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -330,6 +533,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                   value={form.genre}
                   onChange={(e) => setForm({ ...form, genre: e.target.value })}
                   className={inputClass}
+                  required
                 >
                   <option value="">Select genre</option>
                   {GENRES.map((g) => (
@@ -397,10 +601,10 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
             </div>
           </section>
 
-          {/* Contact and Address */}
+          {/* Seller Details */}
           <section className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">
-              Contact and Address
+              Seller Details
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 

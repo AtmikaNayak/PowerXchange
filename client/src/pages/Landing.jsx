@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-<<<<<<< Updated upstream
 
 const SPECIALTIES = [
   {
@@ -41,8 +40,6 @@ const SPECIALTIES = [
     bgGlow: "shadow-pink-500/50",
   },
 ];
-=======
->>>>>>> Stashed changes
 
 function Landing({ isLoggedIn, onLogout, cart, wishlist }) {
   const navigate = useNavigate();

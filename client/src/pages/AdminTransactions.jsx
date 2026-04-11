@@ -3,12 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 
 export default function AdminTransactions() {
-<<<<<<< Updated upstream
   const navigate = useNavigate();
-=======
-  const navigate = useNavigate(); // ✅ FIX
-
->>>>>>> Stashed changes
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");

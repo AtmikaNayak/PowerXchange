@@ -59,7 +59,7 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
             </button>
 
             {/* Cart badge */}
-            <button onClick={() => navigate("/profile")}
+            <button onClick={() => navigate("/cart")}
               className="relative text-slate-500 hover:text-blue-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13M10 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm7 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
@@ -72,7 +72,7 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
             </button>
 
             {/* Wishlist badge */}
-            <button onClick={() => navigate("/profile")}
+            <button onClick={() => navigate("/wishlist")}
               className="relative text-slate-500 hover:text-rose-500 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 0 1 6.364 0L12 7.636l1.318-1.318a4.5 4.5 0 1 1 6.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 0 1 0-6.364z" />

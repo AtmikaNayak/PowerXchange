@@ -17,23 +17,39 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
   useEffect(() => {
     const fetchBook = async () => {
+      // First try with profiles join
       const { data, error } = await supabase
         .from("books")
-        .select("*, profiles(full_name, email, college)")
+        .select("*, profiles(name, full_name, email, college)")
         .eq("id", id)
         .single();
 
       if (!error && data) {
+        const profile = data.profiles || {};
         setBook({
           ...data,
-          seller_name: data.seller_name || data.profiles?.full_name || "Seller",
-          seller_email: data.seller_email || data.profiles?.email,
-          seller_college: data.profiles?.college,
+          seller_name: data.seller_name || profile.name || profile.full_name || "Seller",
+          seller_email: data.seller_email || profile.email,
+          seller_college: data.seller_college || profile.college,
           seller_phone: data.seller_phone,
           seller_address: data.seller_address,
           seller_city: data.seller_city,
           seller_pincode: data.seller_pincode,
         });
+      } else {
+        // Fallback: fetch without join in case profiles RLS blocks it
+        const { data: bookOnly } = await supabase
+          .from("books")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (bookOnly) {
+          setBook({
+            ...bookOnly,
+            seller_name: bookOnly.seller_name || "Seller",
+          });
+        }
       }
       setLoading(false);
     };
@@ -66,7 +82,6 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
   const handleSubmit = async () => {
     if (!message.trim()) return;
 
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       alert("Please login to proceed");
@@ -74,24 +89,22 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
       return;
     }
 
-    // Check if book is still available with stock
-    if (!book.is_available || (book.quantity || 0) <= 0) {
+    // Only block if explicitly marked unavailable; treat null/undefined quantity as 1
+    if (book.is_available === false) {
       alert("Sorry, this book is currently out of stock.");
       navigate("/home");
       return;
     }
 
-    // Decrement quantity by 1 (auto-sets is_available to false if quantity becomes 0)
-    const newQuantity = (book.quantity || 1) - 1;
+    const newQuantity = Math.max(0, (book.quantity ?? 1) - 1);
 
-    // Create a transaction record and update book quantity
     const { error: transactionError } = await supabase.from("transactions").insert({
       book_id: book.id,
       buyer_id: user.id,
       seller_id: book.seller_id,
       price: book.price,
       status: "pending",
-      notes: message,
+      notes: mode === "exchange" ? `[EXCHANGE: ${exchangeBook}] ${message}` : message,
     });
 
     if (transactionError) {
@@ -99,23 +112,13 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
       return;
     }
 
-    // Update book quantity (trigger will auto-set is_available = false if quantity = 0)
-    const { error: updateError } = await supabase
+    await supabase
       .from("books")
-      .update({
-        quantity: newQuantity,
-        // is_available will be auto-set by database trigger
-      })
+      .update({ quantity: newQuantity })
       .eq("id", book.id);
 
-    if (updateError) {
-      console.error("Error updating quantity:", updateError.message);
-      // Don't block the user - transaction was successful
-    }
-
-    // Increment sales count for trending calculation
     try {
-      await supabase.rpc('increment_book_sales', { p_book_id: book.id });
+      await supabase.rpc("increment_book_sales", { p_book_id: book.id });
     } catch (err) {
       console.error("Error incrementing sales:", err);
     }
@@ -125,7 +128,7 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
       <div className="max-w-2xl mx-auto px-4 py-10">
 
         {/* Back button */}
@@ -139,8 +142,15 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
         {/* Book Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-5">
           <div className="flex gap-5 items-start">
-            <div className="w-16 h-20 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-medium shrink-0">
-              {book.genre || "Book"}
+            <div className="w-16 h-20 rounded-lg overflow-hidden bg-indigo-100 shrink-0">
+              {book.image_url ? (
+                <img src={book.image_url} alt={book.title} className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = "none"; }} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-indigo-700 text-xs font-medium">
+                  {book.genre || "Book"}
+                </div>
+              )}
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">{book.title}</h1>
@@ -158,9 +168,7 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 )}
               </div>
             </div>
-            {book.price && (
-              <p className="text-2xl font-bold text-gray-900 shrink-0">₹{book.price}</p>
-            )}
+            <p className="text-2xl font-bold text-gray-900 shrink-0">₹{book.price}</p>
           </div>
         </div>
 
@@ -214,7 +222,8 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
             />
             <button
               onClick={handleSubmit}
-              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              disabled={!message.trim()}
+              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirm Purchase Request
             </button>
@@ -241,7 +250,8 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
             />
             <button
               onClick={handleSubmit}
-              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              disabled={!message.trim() || !exchangeBook.trim()}
+              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send Exchange Request
             </button>
@@ -259,16 +269,15 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 : "Your exchange proposal has been sent to the seller."}
             </p>
             <button
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/home")}
               className="mt-5 text-sm border border-gray-300 rounded-lg px-5 py-2 hover:bg-gray-50 transition"
             >
-              Back to Profile
+              Browse More Books
             </button>
           </div>
         )}
 
       </div>
-
       <Footer />
     </div>
   );

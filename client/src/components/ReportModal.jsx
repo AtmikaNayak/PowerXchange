@@ -89,7 +89,7 @@ export default function ReportModal({ isOpen, onClose, reportType, targetId, tar
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900">
-                Report {reportType === "seller" ? "Seller" : "Book"}
+                Report {reportType === "seller" ? "User" : "Book"}
               </h2>
               <p className="text-sm text-gray-500 truncate max-w-[200px]">
                 {targetName}
@@ -125,7 +125,7 @@ export default function ReportModal({ isOpen, onClose, reportType, targetId, tar
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">
-                    Only report if you believe this {reportType} violates our policies
+                    Only report if you believe this {reportType === "seller" ? "user" : reportType} violates our policies
                   </p>
                   <p className="text-xs text-amber-600 mt-1">
                     False reports may result in account restrictions

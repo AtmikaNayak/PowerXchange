@@ -27,14 +27,11 @@ export default function AuthorPage({ isLoggedIn, onLogout }) {
       if (!authorError && authorData) {
         setAuthor(authorData);
 
-        // Fetch books by this author
+        // Fetch books by this author — match by author_id (new books) OR author name text (old books)
         const { data: booksData, error: booksError } = await supabase
           .from("books")
           .select("*")
-          .eq("author_id", id)
-          .eq("is_approved", true)
-          .eq("is_available", true)
-          .gt("quantity", 0);
+          .or(`author_id.eq.${id},author.ilike.%${authorData.name}%`);
 
         if (!booksError && booksData) {
           setAuthorBooks(booksData);
@@ -125,7 +122,7 @@ export default function AuthorPage({ isLoggedIn, onLogout }) {
                   className="bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-sm
                     hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-pointer group">
                   <div className="h-48 overflow-hidden bg-blue-50">
-                    <img src={book.imageUrl} alt={book.title}
+                    <img src={book.image_url || book.imageUrl || book.img} alt={book.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => { e.target.src = "https://placehold.co/200x192?text=Book"; }} />
                   </div>

@@ -1,4 +1,4 @@
-  import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
@@ -31,6 +31,7 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
   });
   const [draft, setDraft] = useState(form);
   const [userId, setUserId] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -60,6 +61,7 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
         };
         setForm(userData);
         setDraft(userData);
+        setPhotoUrl(profileData.photo_url || null);
       }
 
       // Fetch user's listed books
@@ -135,18 +137,31 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
     setSaving(true);
     setSaveMessage("");
 
+    // Always re-fetch the current session to ensure userId is available
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = userId || session?.user?.id;
+
+    if (!uid) {
+      setSaveMessage("Error saving profile");
+      setSaving(false);
+      return;
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: draft.name,
+        name: draft.name,
         college: draft.college,
         location: draft.location,
-        bio: draft.bio
+        bio: draft.bio,
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", userId);
+      .eq("id", uid);
 
     if (error) {
-      setSaveMessage("Error saving profile");
+      console.error("Profile save error:", error);
+      setSaveMessage("Error saving profile: " + error.message);
     } else {
       setForm(draft);
       setSaveMessage("Profile saved successfully!");
@@ -162,8 +177,11 @@ export default function Profile({ isLoggedIn, onLogout, cart }) {
 
         {/* Profile Hero */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center gap-5 mb-6">
-          <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-medium shrink-0">
-            {form.name ? form.name[0].toUpperCase() : "U"}
+          <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-medium shrink-0 overflow-hidden border-2 border-blue-200">
+            {photoUrl
+              ? <img src={photoUrl} alt={form.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display='none'; e.target.parentNode.innerHTML = `<span class="text-xl font-medium">${(form.name||'U')[0].toUpperCase()}</span>`; }} />
+              : <span>{form.name ? form.name[0].toUpperCase() : "U"}</span>
+            }
           </div>
           <div>
             <p className="text-lg font-medium text-gray-900">{form.name || "Loading..."}</p>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { Edit2, Trash2, Eye, EyeOff, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Edit2, Trash2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 
 export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [editingBook, setEditingBook] = useState(null);
-  const [editForm, setEditForm] = useState({ quantity: 1, is_available: true });
+  const [editForm, setEditForm] = useState({ genre: "", condition: "", is_available: true });
   const [updating, setUpdating] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -61,40 +61,39 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
     setUpdating(false);
   };
 
-  const handleUpdateQuantity = async (book) => {
+  const GENRES = ["Fiction","Non-Fiction","Science","Technology","Mathematics","History","Biography","Self-Help","Business","Arts","Comics","Other"];
+  const CONDITIONS = ["new","good","acceptable"];
+  const CONDITION_LABELS = { new: "New", good: "Good", acceptable: "Acceptable" };
+
+  const handleEditDetails = (book) => {
     setEditingBook(book.id);
     setEditForm({
-      quantity: book.quantity || 1,
-      is_available: book.is_available
+      genre: book.genre || "",
+      condition: book.condition || "",
+      is_available: book.is_available !== false,
     });
   };
 
-  const handleSaveQuantity = async (bookId) => {
+  const handleSaveDetails = async (bookId) => {
     setUpdating(true);
-
-    // Auto set is_available to false if quantity is 0
-    const newQuantity = Math.max(0, parseInt(editForm.quantity) || 0);
-    const newAvailability = newQuantity > 0;
-
     const { error } = await supabase
       .from("books")
       .update({
-        quantity: newQuantity,
-        is_available: newAvailability
+        genre: editForm.genre,
+        condition: editForm.condition,
+        is_available: editForm.is_available,
       })
       .eq("id", bookId);
 
     if (error) {
-      alert("Error updating quantity: " + error.message);
+      alert("Error updating book: " + error.message);
     } else {
-      setSuccessMessage(newQuantity === 0
-        ? "Stock is now 0 - book marked as out of stock"
-        : `Quantity updated to ${newQuantity}`
-      );
+      setSuccessMessage("Book details updated successfully");
       setBooks(books.map(b => b.id === bookId ? {
         ...b,
-        quantity: newQuantity,
-        is_available: newAvailability
+        genre: editForm.genre,
+        condition: editForm.condition,
+        is_available: editForm.is_available,
       } : b));
       setEditingBook(null);
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -104,7 +103,7 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
 
   const handleCancelEdit = () => {
     setEditingBook(null);
-    setEditForm({ quantity: 1, is_available: true });
+    setEditForm({ genre: "", condition: "", is_available: true });
   };
 
   const handleDeleteBook = async (bookId) => {
@@ -126,31 +125,19 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
     }
   };
 
-  const handleEditBook = (bookId) => {
-    navigate(`/sellbook?edit=${bookId}`);
-  };
-
   const getStatusBadge = (book) => {
-    if (book.quantity === 0 || !book.is_available) {
+    if (!book.is_available) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
           <XCircle size={12} />
-          Out of Stock
-        </span>
-      );
-    }
-    if (book.quantity <= 3) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
-          <AlertCircle size={12} />
-          Low Stock ({book.quantity})
+          Not Available
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
         <CheckCircle size={12} />
-        In Stock ({book.quantity})
+        Available
       </span>
     );
   };
@@ -201,21 +188,21 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
           </div>
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <p className="text-2xl font-bold text-green-600">
-              {books.filter(b => b.is_available && (b.quantity || 0) > 0).length}
+              {books.filter(b => b.is_available).length}
             </p>
             <p className="text-sm text-gray-500">Available</p>
           </div>
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <p className="text-2xl font-bold text-amber-600">
-              {books.filter(b => (b.quantity || 0) <= 3 && (b.quantity || 0) > 0).length}
+              {books.filter(b => b.is_approved).length}
             </p>
-            <p className="text-sm text-gray-500">Low Stock</p>
+            <p className="text-sm text-gray-500">Approved</p>
           </div>
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <p className="text-2xl font-bold text-red-600">
-              {books.filter(b => !b.is_available || (b.quantity || 0) === 0).length}
+              {books.filter(b => !b.is_available).length}
             </p>
-            <p className="text-sm text-gray-500">Out of Stock</p>
+            <p className="text-sm text-gray-500">Not Available</p>
           </div>
         </div>
 
@@ -274,49 +261,69 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
                       <span className="font-semibold text-gray-900">₹{book.price || 0}</span>
                     </div>
 
-                    {/* Quantity Control */}
+                    {/* Inline Edit Panel */}
                     {editingBook === book.id ? (
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Quantity</label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editForm.quantity}
-                            onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
-                            className="w-20 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                          />
+                      <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-500 block mb-1 font-medium">Genre</label>
+                            <select
+                              value={editForm.genre}
+                              onChange={(e) => setEditForm({ ...editForm, genre: e.target.value })}
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                            >
+                              <option value="">Select genre</option>
+                              {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-500 block mb-1 font-medium">Condition</label>
+                            <select
+                              value={editForm.condition}
+                              onChange={(e) => setEditForm({ ...editForm, condition: e.target.value })}
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                            >
+                              <option value="">Select condition</option>
+                              {CONDITIONS.map(c => <option key={c} value={c}>{CONDITION_LABELS[c]}</option>)}
+                            </select>
+                          </div>
                         </div>
-                        <div className="flex gap-2 mt-5">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-gray-500 font-medium">Availability:</label>
                           <button
-                            onClick={() => handleSaveQuantity(book.id)}
-                            disabled={updating}
-                            className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                            onClick={() => setEditForm({ ...editForm, is_available: !editForm.is_available })}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                              editForm.is_available
+                                ? "bg-green-100 text-green-700 border border-green-300"
+                                : "bg-red-100 text-red-700 border border-red-300"
+                            }`}
                           >
-                            Save
+                            {editForm.is_available ? "✓ Available" : "✗ Not Available"}
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveDetails(book.id)}
+                            disabled={updating}
+                            className="px-4 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                          >
+                            {updating ? "Saving..." : "Save Changes"}
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition"
+                            className="px-4 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition"
                           >
                             Cancel
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
-                          Stock: <span className={`font-medium ${(book.quantity || 0) === 0 ? 'text-red-600' : ''}`}>
-                            {book.quantity || 0}
-                          </span>
-                        </span>
-                        <button
-                          onClick={() => handleUpdateQuantity(book)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Edit
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleEditDetails(book)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1 inline-flex items-center gap-1"
+                      >
+                        <Edit2 size={11} /> Edit details
+                      </button>
                     )}
                   </div>
 
@@ -329,13 +336,7 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
                     >
                       <Eye size={18} />
                     </button>
-                    <button
-                      onClick={() => handleEditBook(book.id)}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
-                      title="Edit Book"
-                    >
-                      <Edit2 size={18} />
-                    </button>
+
                     <button
                       onClick={() => handleToggleAvailability(book)}
                       disabled={updating}

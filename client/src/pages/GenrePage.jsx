@@ -24,18 +24,7 @@ export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToC
     setLoading(true);
     const { data, error } = await supabase
       .from("books")
-      .select(`
-        *,
-        authors (
-          id,
-          name,
-          is_approved
-        )
-      `)
-      .eq("is_approved", true)
-      .eq("is_available", true)
-      .gt("quantity", 0)
-      .eq("authors.is_approved", true)
+      .select("*")
       .ilike("genre", genreName);
 
     if (!error && data) {

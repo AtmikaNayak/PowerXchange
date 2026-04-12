@@ -20,6 +20,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showReportUserModal, setShowReportUserModal] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -30,12 +31,26 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
         .single();
 
       if (!error && data) {
+        // If seller_id is missing, try to resolve it from profiles via email or name
+        let resolvedSellerId = data.seller_id;
+        if (!resolvedSellerId) {
+          // Try matching seller by email first, then by full_name
+          if (data.seller_email) {
+            const { data: sp } = await supabase.from("profiles").select("id").eq("email", data.seller_email).maybeSingle();
+            resolvedSellerId = sp?.id || null;
+          }
+          if (!resolvedSellerId && data.seller_name) {
+            const { data: sp } = await supabase.from("profiles").select("id").eq("full_name", data.seller_name).maybeSingle();
+            resolvedSellerId = sp?.id || null;
+          }
+        }
         setBook({
           ...data,
+          seller_id: resolvedSellerId,
           imageUrl: data.image_url || "https://placehold.co/260x380?text=Book",
           listingType: data.price === 0 ? "exchange" : "sell",
           genre: data.genre || data.category || "General",
-          available: data.is_available,
+          available: data.is_available && (data.available_copies === undefined || data.available_copies > 0),
           seller_name: data.seller_name || data.profiles?.name || "Seller",
           seller_email: data.seller_email || data.profiles?.email,
           seller_college: data.profiles?.college,
@@ -48,12 +63,24 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
           .eq("id", id)
           .single();
         if (bookOnly) {
+          let resolvedSellerId = bookOnly.seller_id;
+          if (!resolvedSellerId) {
+            if (bookOnly.seller_email) {
+              const { data: sp } = await supabase.from("profiles").select("id").eq("email", bookOnly.seller_email).maybeSingle();
+              resolvedSellerId = sp?.id || null;
+            }
+            if (!resolvedSellerId && bookOnly.seller_name) {
+              const { data: sp } = await supabase.from("profiles").select("id").eq("full_name", bookOnly.seller_name).maybeSingle();
+              resolvedSellerId = sp?.id || null;
+            }
+          }
           setBook({
             ...bookOnly,
+            seller_id: resolvedSellerId,
             imageUrl: bookOnly.image_url || "https://placehold.co/260x380?text=Book",
             listingType: bookOnly.price === 0 ? "exchange" : "sell",
             genre: bookOnly.genre || bookOnly.category || "General",
-            available: bookOnly.is_available,
+            available: bookOnly.is_available && (bookOnly.available_copies === undefined || bookOnly.available_copies > 0),
             seller_name: bookOnly.seller_name || "Seller",
           });
         }
@@ -83,6 +110,26 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
 
     getCurrentUser();
   }, []);
+
+  // Re-attempt seller_id resolution after book loads (in case anon RLS blocked it earlier)
+  useEffect(() => {
+    if (!book || book.seller_id) return; // already resolved or no book
+    const resolveSeller = async () => {
+      let resolved = null;
+      if (book.seller_email) {
+        const { data } = await supabase.from("profiles").select("id").eq("email", book.seller_email).maybeSingle();
+        resolved = data?.id || null;
+      }
+      if (!resolved && book.seller_name) {
+        const { data } = await supabase.from("profiles").select("id").eq("full_name", book.seller_name).maybeSingle();
+        resolved = data?.id || null;
+      }
+      if (resolved) {
+        setBook(prev => ({ ...prev, seller_id: resolved }));
+      }
+    };
+    resolveSeller();
+  }, [book?.id, currentUser]); // re-run when currentUser is set (auth session available)
 
   if (loading) {
     return (
@@ -184,62 +231,88 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
                   <p className="text-sm text-slate-400">{book.seller_college || "N/A"}</p>
                 </div>
               </div>
+              <button
+                onClick={() => setShowReportUserModal(true)}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                title="Report this seller">
+                <Flag size={13} />
+                Report User
+              </button>
             </div>
 
             {/* Actions */}
             <div className="flex flex-col gap-2.5 pt-1">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate(`/buybook/${book.id}`)}
-                  className="flex-1 py-3.5 rounded-xl font-semibold text-base bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200">
-                  {book.price > 0 ? "Buy Now" : "Contact Seller"}
-                </button>
-                <button
-                  onClick={() => setShowReportModal(true)}
-                  className="p-3.5 rounded-xl border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all duration-200"
-                  title="Report this book">
-                  <Flag size={20} />
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  const bookData = {
-                    id: book.id,
-                    title: book.title,
-                    author: book.author,
-                    price: book.price,
-                    imageUrl: book.image_url,
-                  };
-                  if (typeof removeFromCart === 'function') removeFromCart(book.id);
-                  if (typeof addToCart === 'function') addToCart(bookData);
-                }}
-                className={`w-full py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
-                  cart?.some(c => c.id === book.id)
-                    ? "bg-blue-950 text-white border-blue-950"
-                    : "border-blue-200 text-blue-700 hover:bg-blue-50"
-                }`}>
-                {cart?.some(c => c.id === book.id) ? "✓ Added to Cart" : "Add to Cart"}
-              </button>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => {
-                    if (typeof removeFromWishlist === 'function') removeFromWishlist(book.id);
-                    if (typeof addToWishlist === 'function') addToWishlist(book);
-                  }}
-                  className={`py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
-                    wishlist?.some(w => w.id === book.id)
-                      ? "border-rose-400 text-rose-500 bg-rose-50"
-                      : "border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-400"
-                  }`}>
-                  {wishlist?.some(w => w.id === book.id) ? "♥ Wishlisted" : "♡ Wishlist"}
-                </button>
-                <a
-                  href={`mailto:${book.seller_email}?subject=Interest in ${book.title}`}
-                  className="py-3.5 rounded-xl font-semibold text-base border border-slate-200 text-slate-600
-                    hover:border-blue-300 hover:text-blue-600 transition-all duration-200 text-center">
-                  💬 Contact Seller
-                </a>
-              </div>
+              {book.available ? (
+                <>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate(`/buybook/${book.id}`)}
+                      className="flex-1 py-3.5 rounded-xl font-semibold text-base bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200">
+                      {book.price > 0 ? "Buy Now" : "Contact Seller"}
+                    </button>
+                    <button
+                      onClick={() => setShowReportModal(true)}
+                      className="p-3.5 rounded-xl border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all duration-200"
+                      title="Report this book">
+                      <Flag size={20} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const bookData = { id: book.id, title: book.title, author: book.author, price: book.price, imageUrl: book.image_url };
+                      if (typeof removeFromCart === 'function') removeFromCart(book.id);
+                      if (typeof addToCart === 'function') addToCart(bookData);
+                    }}
+                    className={`w-full py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
+                      cart?.some(c => c.id === book.id) ? "bg-blue-950 text-white border-blue-950" : "border-blue-200 text-blue-700 hover:bg-blue-50"
+                    }`}>
+                    {cart?.some(c => c.id === book.id) ? "✓ Added to Cart" : "Add to Cart"}
+                  </button>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => {
+                        if (typeof removeFromWishlist === 'function') removeFromWishlist(book.id);
+                        if (typeof addToWishlist === 'function') addToWishlist(book);
+                      }}
+                      className={`py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
+                        wishlist?.some(w => w.id === book.id) ? "border-rose-400 text-rose-500 bg-rose-50" : "border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-400"
+                      }`}>
+                      {wishlist?.some(w => w.id === book.id) ? "♥ Wishlisted" : "♡ Wishlist"}
+                    </button>
+                    <a href={`mailto:${book.seller_email}?subject=Interest in ${book.title}`}
+                      className="py-3.5 rounded-xl font-semibold text-base border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-all duration-200 text-center">
+                      💬 Contact Seller
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-full py-4 rounded-xl bg-red-50 border border-red-200 text-center">
+                    <p className="text-red-600 font-semibold text-base">❌ Out of Stock</p>
+                    <p className="text-red-400 text-sm mt-1">This book is currently unavailable</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => {
+                        if (typeof removeFromWishlist === 'function') removeFromWishlist(book.id);
+                        if (typeof addToWishlist === 'function') addToWishlist(book);
+                      }}
+                      className={`py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
+                        wishlist?.some(w => w.id === book.id) ? "border-rose-400 text-rose-500 bg-rose-50" : "border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-400"
+                      }`}>
+                      {wishlist?.some(w => w.id === book.id) ? "♥ Wishlisted" : "♡ Wishlist"}
+                    </button>
+                    <a href={`mailto:${book.seller_email}?subject=Interest in ${book.title}`}
+                      className="py-3.5 rounded-xl font-semibold text-base border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-all duration-200 text-center">
+                      💬 Contact Seller
+                    </a>
+                  </div>
+                  <button onClick={() => setShowReportModal(true)}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 text-sm transition-all duration-200">
+                    <Flag size={14} /> Report this listing
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -249,13 +322,6 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
           <section className="bg-white border border-blue-100 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold uppercase tracking-widest text-blue-400">Seller Contact Information</h2>
-              <button
-                onClick={() => setShowReportModal(true)}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-600 transition"
-              >
-                <Flag size={14} />
-                Report Seller
-              </button>
             </div>
             <div className="space-y-2 text-base">
               {book.seller_phone && (
@@ -284,13 +350,23 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
         <Reviews bookId={book.id} currentUser={currentUser} />
       </main>
 
-      {/* Report Modal */}
+      {/* Report Book Modal */}
       <ReportModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         reportType="book"
         targetId={book.id}
         targetName={book.title}
+        currentUser={currentUser}
+      />
+
+      {/* Report User/Seller Modal */}
+      <ReportModal
+        isOpen={showReportUserModal}
+        onClose={() => setShowReportUserModal(false)}
+        reportType="seller"
+        targetId={book.seller_id}
+        targetName={book.seller_name || "Seller"}
         currentUser={currentUser}
       />
 

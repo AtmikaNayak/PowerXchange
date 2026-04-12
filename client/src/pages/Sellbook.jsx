@@ -116,14 +116,15 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     setSubmitting(true);
 
     // Check if author already exists (case-insensitive)
-    const { data: existingAuthor } = await supabase
+    const { data: existingAuthors } = await supabase
       .from("authors")
       .select("id, name")
-      .ilike("name", form.author.trim())
-      .single();
+      .ilike("name", form.author.trim());
+
+    const existingAuthor = existingAuthors?.[0] || null;
 
     if (existingAuthor) {
-      // Author exists - just link book to existing author
+      // Author exists - just submit book with existing author name
       await submitBookWithAuthor(existingAuthor.id);
     } else {
       // Author doesn't exist - show modal to create new author
@@ -186,15 +187,15 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
           seller_city: form.city,
           seller_pincode: form.pincode,
           title: form.title,
+          author: form.author,
           author_id: authorId,
           genre: form.genre,
           condition: form.condition,
           price: parseFloat(form.price) || 0,
           description: form.description,
           image_url: image_url,
-          quantity: parseInt(form.quantity) || 1,
           is_approved: false,
-          is_available: (parseInt(form.quantity) || 1) > 0,
+          is_available: true,
         });
 
       if (error) throw error;
@@ -218,11 +219,26 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
         photoUrl = await uploadAuthorPhoto(authorPhotoFile);
       }
 
-      // Create new author with details
+      // Check one more time in case author was created between steps
+      const { data: recheckAuthors } = await supabase
+        .from("authors")
+        .select("id, name")
+        .ilike("name", form.author.trim());
+
+      const alreadyExists = recheckAuthors?.[0] || null;
+
+      if (alreadyExists) {
+        // Author was already created - just use it
+        setShowAuthorModal(false);
+        await submitBookWithAuthor(alreadyExists.id);
+        return;
+      }
+
+      // Safe to create new author
       const { data: newAuthor, error: authorError } = await supabase
         .from("authors")
         .insert({
-          name: form.author,
+          name: form.author.trim(),
           photo_url: photoUrl,
           description: authorDetails.description,
           genre: authorDetails.genre,
@@ -230,7 +246,23 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
         .select("id")
         .single();
 
-      if (authorError) throw authorError;
+      if (authorError) {
+        // Last resort: if duplicate key, fetch the existing one and proceed
+        if (authorError.message.includes("duplicate key") || authorError.message.includes("unique constraint")) {
+          const { data: fallback } = await supabase
+            .from("authors")
+            .select("id")
+            .ilike("name", form.author.trim())
+            .limit(1)
+            .single();
+          if (fallback) {
+            setShowAuthorModal(false);
+            await submitBookWithAuthor(fallback.id);
+            return;
+          }
+        }
+        throw authorError;
+      }
 
       setShowAuthorModal(false);
       await submitBookWithAuthor(newAuthor.id);

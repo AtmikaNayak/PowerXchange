@@ -34,7 +34,7 @@ function Login({ onLogin }) {
     if (data.user) {
       if (onLogin) onLogin();
 
-      // Check if user is an admin by looking at their role in profiles
+      // Check admin via profiles.role column
       const { data: profileData } = await supabase
         .from("profiles")
         .select("role")
@@ -42,6 +42,18 @@ function Login({ onLogin }) {
         .single();
 
       if (profileData?.role === "admin") {
+        navigate("/admin");
+        return;
+      }
+
+      // Fallback: check admin_roles table
+      const { data: adminRole } = await supabase
+        .from("admin_roles")
+        .select("id")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (adminRole) {
         navigate("/admin");
       } else {
         navigate("/home");

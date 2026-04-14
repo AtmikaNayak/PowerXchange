@@ -31,42 +31,51 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
     if (!user) { navigate("/login"); return; }
     setUserId(user.id);
 
-    // Load purchases (as buyer)
-    const { data: buyerTx } = await supabase
+    // Load purchases (as buyer) - use shorthand join syntax that works with Supabase
+    const { data: buyerTx, error: buyerErr } = await supabase
       .from("transactions")
-      .select("*, books(id, title, author, image_url, genre, condition, price), seller:profiles!seller_id(full_name, name, email, college)")
+      .select("*, books(id, title, author, image_url, genre, condition, price), seller:seller_id(full_name, name, email, college)")
       .eq("buyer_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (buyerErr) console.error("Error loading purchases:", buyerErr);
     setPurchases(buyerTx || []);
 
     // Load incoming orders (as seller)
-    const { data: sellerTx } = await supabase
+    const { data: sellerTx, error: sellerErr } = await supabase
       .from("transactions")
-      .select("*, books(id, title, author, image_url, genre, condition, price), buyer:profiles!buyer_id(full_name, name, email, college)")
+      .select("*, books(id, title, author, image_url, genre, condition, price), buyer:buyer_id(full_name, name, email, college)")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (sellerErr) console.error("Error loading incoming orders:", sellerErr);
     setIncoming(sellerTx || []);
 
-    // Load notifications
-    const { data: notifs } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    setNotifications(notifs || []);
-
-    // Mark all as read
-    if (notifs && notifs.some(n => !n.is_read)) {
-      await supabase
+    // Load notifications (table may not exist yet)
+    let notifsList = [];
+    try {
+      const { data: notifs, error: notifErr } = await supabase
         .from("notifications")
-        .update({ is_read: true })
+        .select("*")
         .eq("user_id", user.id)
-        .eq("is_read", false);
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (!notifErr && notifs) {
+        notifsList = notifs;
+        // Mark all as read
+        if (notifs.some(n => !n.is_read)) {
+          await supabase
+            .from("notifications")
+            .update({ is_read: true })
+            .eq("user_id", user.id)
+            .eq("is_read", false);
+        }
+      }
+    } catch (err) {
+      console.error("Notifications table may not exist yet:", err);
     }
+    setNotifications(notifsList);
 
     setLoading(false);
   };

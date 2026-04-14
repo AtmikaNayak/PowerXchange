@@ -155,6 +155,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
   }
 
   const conditionStyle = CONDITION_STYLES[book.condition] ?? CONDITION_STYLES.acceptable;
+  const isOwnBook = currentUser && book.seller_id && currentUser.id === book.seller_id;
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
@@ -242,13 +243,26 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
 
             {/* Actions */}
             <div className="flex flex-col gap-2.5 pt-1">
-              {!book.available && (
+              {/* Own book warning */}
+              {isOwnBook && (
+                <div className="w-full py-4 rounded-xl bg-amber-50 border border-amber-200 text-center mb-1">
+                  <p className="text-amber-700 font-semibold text-base">✉️ This is your listing</p>
+                  <p className="text-amber-500 text-sm mt-1">You can't purchase your own book</p>
+                  <button
+                    onClick={() => navigate("/my-books")}
+                    className="mt-3 text-sm bg-amber-600 text-white rounded-lg px-5 py-2 hover:bg-amber-700 transition font-medium"
+                  >
+                    Manage My Books
+                  </button>
+                </div>
+              )}
+              {!isOwnBook && !book.available && (
                 <div className="w-full py-4 rounded-xl bg-red-50 border border-red-200 text-center mb-1">
                   <p className="text-red-600 font-semibold text-base">❌ Out of Stock</p>
                   <p className="text-red-400 text-sm mt-1">This book is currently unavailable</p>
                 </div>
               )}
-              {book.available && (
+              {!isOwnBook && book.available && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => navigate(`/buybook/${book.id}`)}
@@ -263,7 +277,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
                   </button>
                 </div>
               )}
-              {book.available && (
+              {!isOwnBook && book.available && (
                 <button
                   onClick={() => {
                     const bookData = {
@@ -304,7 +318,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
                   💬 Contact Seller
                 </a>
               </div>
-              {!book.available && (
+              {!isOwnBook && !book.available && (
                 <button
                   onClick={() => setShowReportModal(true)}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 text-sm transition-all duration-200">

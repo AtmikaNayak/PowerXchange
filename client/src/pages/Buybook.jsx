@@ -4,11 +4,12 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
+export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFromCart }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [mode, setMode] = useState(null);
   const [message, setMessage] = useState("");
@@ -17,6 +18,10 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
   useEffect(() => {
     const fetchBook = async () => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+
       // First try with profiles join
       const { data, error } = await supabase
         .from("books")
@@ -146,6 +151,11 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
       }
     }
 
+    // Remove book from cart after successful purchase
+    if (typeof removeFromCart === 'function') {
+      removeFromCart(book.id);
+    }
+
     setSubmitted(true);
   };
 
@@ -206,8 +216,23 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist }) {
           </div>
         </div>
 
+        {/* Own book warning */}
+        {currentUserId && book.seller_id === currentUserId && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center mb-5">
+            <div className="text-3xl mb-2">⚠️</div>
+            <p className="text-base font-semibold text-amber-800">This is your own listing</p>
+            <p className="text-sm text-amber-600 mt-1">You can't buy or exchange your own book.</p>
+            <button
+              onClick={() => navigate("/my-books")}
+              className="mt-4 text-sm bg-amber-600 text-white rounded-lg px-5 py-2 hover:bg-amber-700 transition font-medium"
+            >
+              Manage My Books
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
-        {!submitted && (
+        {!submitted && !(currentUserId && book.seller_id === currentUserId) && (
           <div className="flex gap-3 mb-5">
             <button
               onClick={() => setMode(mode === "buy" ? null : "buy")}

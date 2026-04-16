@@ -16,12 +16,11 @@ export default function AuthorPage({ isLoggedIn, onLogout }) {
     const fetchAuthor = async () => {
       const { supabase } = await import("../supabase");
 
-      // Fetch author from database
+      // Fetch author from database (don't filter by is_approved - show all authors)
       const { data: authorData, error: authorError } = await supabase
         .from("authors")
         .select("*")
         .eq("id", id)
-        .eq("is_approved", true)
         .single();
 
       if (!authorError && authorData) {

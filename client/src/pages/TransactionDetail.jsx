@@ -278,7 +278,7 @@ export default function TransactionDetail({ isLoggedIn, onLogout, cart, wishlist
             </div>
           )}
 
-          {/* Price Summary */}
+           {/* Price Summary */}
           <div className="px-6 py-5 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Price Summary</h2>
             <div className="space-y-2">
@@ -298,6 +298,29 @@ export default function TransactionDetail({ isLoggedIn, onLogout, cart, wishlist
               </div>
             </div>
           </div>
+
+          {/* Payment Instructions */}
+          {tx.status === "completed" && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-3">Payment Instructions</h2>
+              <div className="space-y-2 text-sm text-amber-800">
+                <p className="font-medium">Payment Method:</p>
+                <p className="bg-white rounded-lg p-3 border border-amber-200">
+                  💸 <strong>Direct Payment</strong> - This platform does not handle payments. Please arrange payment directly with the seller using your preferred method (UPI, Cash, Bank Transfer, etc.).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  <div className="bg-white rounded-lg p-3 border border-amber-200">
+                    <p className="font-medium text-xs text-amber-700 mb-1">For Buyers:</p>
+                    <p className="text-xs">Contact the seller to arrange payment. Keep this transaction ID ({tx.id.slice(0, 8)}) for reference.</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-amber-200">
+                    <p className="font-medium text-xs text-amber-700 mb-1">For Sellers:</p>
+                    <p className="text-xs">Coordinate with the buyer to receive payment. This transaction is complete and verified.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 text-center">

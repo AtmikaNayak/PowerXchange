@@ -75,7 +75,24 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       if (error) throw error;
 
-      setSuccessMsg("Order accepted successfully!");
+      // Send notification to buyer
+      try {
+        const buyerId = tx.buyer_id;
+        const bookTitle = tx.books?.title || "the book";
+        const sellerName = tx.seller?.full_name || tx.seller?.name || "The seller";
+
+        await supabase.from("notifications").insert({
+          user_id: buyerId,
+          type: "request_accepted",
+          title: "Your request has been accepted! 🎉",
+          message: `${sellerName} has accepted your request for "${bookTitle}". View the bill and payment details in your orders.`,
+          transaction_id: tx.id,
+        });
+      } catch (notifErr) {
+        console.error("Error sending notification:", notifErr);
+      }
+
+      setSuccessMsg("Order accepted successfully! The buyer has been notified.");
       setTimeout(() => setSuccessMsg(""), 3000);
       await loadData();
     } catch (err) {

@@ -167,18 +167,18 @@ export default function NotificationsPage({ isLoggedIn, onLogout, cart, wishlist
                   ×
                 </button>
                 <div className="flex items-start gap-3 pr-6">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl ${
-                    notif.type === "purchase_request" ? "bg-amber-100" :
-                    notif.type === "request_accepted" ? "bg-emerald-100" :
-                    notif.type === "exchange_request" ? "bg-teal-100" :
-                    notif.type === "request_cancelled" ? "bg-red-100" :
-                    "bg-gray-100"
-                  }`}>
-                    {notif.type === "purchase_request" ? "🛒" :
-                     notif.type === "request_accepted" ? "✅" :
-                     notif.type === "exchange_request" ? "📦" :
-                     notif.type === "request_cancelled" ? "❌" :
-                     "🔔"}
+                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl ${
+                     notif.type === "purchase_request" ? "bg-amber-100" :
+                     notif.type === "request_accepted" ? "bg-emerald-100" :
+                     notif.type === "exchange_request" ? "bg-teal-100" :
+                     notif.type === "request_cancelled" ? "bg-red-100" :
+                     "bg-gray-100"
+                   }`}>
+                     {notif.type === "purchase_request" ? "🛒" :
+                      notif.type === "request_accepted" ? "🎉" :
+                      notif.type === "exchange_request" ? "📦" :
+                      notif.type === "request_cancelled" ? "❌" :
+                      "🔔"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900">{notif.title}</p>

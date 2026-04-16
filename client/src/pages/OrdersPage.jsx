@@ -34,22 +34,21 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
       // Load purchases (as buyer) - use shorthand join syntax that works with Supabase
       const { data: buyerTx, error: buyerErr } = await supabase
         .from("transactions")
-        .select("*, books(id, title, author, image_url, genre, condition, price), seller:seller_id(full_name, name, email, college)")
+        .select("*, books(id, title, author, image_url, genre, condition, price), seller:seller_id(full_name, email, college)")
         .eq("buyer_id", user.id)
         .order("created_at", { ascending: false });
 
       if (buyerErr) {
         console.error("Error loading purchases:", buyerErr);
-        if (buyerErr.message.includes("relation") || buyerErr.message.includes("does not exist")) {
-          alert("Transactions table not set up yet. Please run the database setup script.");
-        }
+        // Tables should be set up now, so don't show the alert
+        // If there's still an error, it's likely a permissions issue
       }
       setPurchases(buyerTx || []);
 
       // Load incoming orders (as seller)
       const { data: sellerTx, error: sellerErr } = await supabase
         .from("transactions")
-        .select("*, books(id, title, author, image_url, genre, condition, price), buyer:buyer_id(full_name, name, email, college)")
+        .select("*, books(id, title, author, image_url, genre, condition, price), buyer:buyer_id(full_name, email, college)")
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
 

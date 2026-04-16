@@ -126,18 +126,48 @@ CREATE TABLE transactions (
 
 ### 1. Run the Database Setup
 
-Execute `ENHANCED_NOTIFICATIONS_SETUP.sql` in your Supabase SQL Editor:
+**IMPORTANT: If you already have the transactions table with RLS disabled, run the FIX script first:**
+
+Execute `FIX_TRANSACTIONS_RLS.sql` in your Supabase SQL Editor:
 
 ```bash
-# Copy the contents of ENHANCED_NOTIFICATIONS_SETUP.sql
+# Copy the contents of FIX_TRANSACTIONS_RLS.sql
 # Paste into Supabase SQL Editor and run
 ```
 
 This will:
-- Create the notifications table with proper constraints
-- Set up indexes for performance
-- Configure Row Level Security (RLS) policies
-- Ensure proper access control
+- Fix RLS policies for both notifications and transactions tables
+- Ensure sellers can accept requests
+- Ensure buyers can see their order history
+- Set up proper access controls
+
+**If starting fresh**, you can use `ENHANCED_NOTIFICATIONS_SETUP.sql` instead.
+
+### 2. Verify Setup
+
+After running the SQL script, verify:
+
+```sql
+-- Check tables exist and RLS is enabled
+SELECT tablename, rowsecurity FROM pg_tables WHERE tablename IN ('notifications', 'transactions');
+
+-- Check RLS policies
+SELECT policyname FROM pg_policies WHERE tablename IN ('notifications', 'transactions');
+
+-- Test the setup
+SELECT 'notifications' as table_name, COUNT(*) as row_count FROM notifications
+UNION ALL
+SELECT 'transactions' as table_name, COUNT(*) as row_count FROM transactions;
+```
+
+### 3. Test the System
+
+Use `TEST_NOTIFICATIONS_AND_ORDERS.sql` to verify everything is working:
+
+```bash
+# Copy the contents of TEST_NOTIFICATIONS_AND_ORDERS.sql
+# Paste into Supabase SQL Editor and run
+```
 
 ### 2. Verify Setup
 

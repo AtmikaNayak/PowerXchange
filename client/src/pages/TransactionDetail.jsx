@@ -29,8 +29,8 @@ export default function TransactionDetail({ isLoggedIn, onLogout, cart, wishlist
         .select(`
           *,
           books(id, title, author, image_url, genre, condition, price, description, seller_name, seller_email, seller_phone, seller_address, seller_city, seller_pincode),
-          buyer:buyer_id(id, full_name, name, email, college, phone),
-          seller:seller_id(id, full_name, name, email, college, phone)
+          buyer:buyer_id(id, full_name, email, college, phone),
+          seller:seller_id(id, full_name, email, college, phone)
         `)
         .eq("id", id)
         .single();

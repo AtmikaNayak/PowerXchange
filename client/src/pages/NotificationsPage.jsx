@@ -155,7 +155,13 @@ export default function NotificationsPage({ isLoggedIn, onLogout, cart, wishlist
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                onClick={() => notif.transaction_id && navigate(`/transaction/${notif.transaction_id}`)}
+                onClick={() => {
+                  if (notif.transaction_id) {
+                    navigate(`/transaction/${notif.transaction_id}`);
+                  } else if (notif.type === "purchase_request" || notif.type === "exchange_request") {
+                    navigate("/orders", { state: { tab: "incoming" } });
+                  }
+                }}
                 className={`bg-white border rounded-xl p-4 cursor-pointer hover:shadow-md transition-all relative ${
                   notif.is_read ? "border-gray-200" : "border-blue-300 bg-blue-50/30"
                 }`}

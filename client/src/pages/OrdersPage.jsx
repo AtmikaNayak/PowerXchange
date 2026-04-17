@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -13,6 +13,7 @@ const STATUS_STYLES = {
 
 export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("purchases");
   const [purchases, setPurchases] = useState([]);
   const [incoming, setIncoming] = useState([]);
@@ -23,6 +24,12 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
   useEffect(() => {
     loadData();
+    // Check if navigated from a notification with tab state
+    if (location.state?.tab === "incoming") {
+      setActiveTab("incoming");
+      // Clear the state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
   }, []);
 
   const loadData = async () => {

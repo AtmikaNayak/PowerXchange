@@ -53,6 +53,13 @@ function Signup() {
       return;
     }
 
+    const idCardFile = idCardInputRef.current?.files?.[0];
+    if (!idCardFile) {
+      setError("Please upload your college ID card");
+      setLoading(false);
+      return;
+    }
+
     try {
       // ── Step 1: Create the auth user ─────────────────────────────────────
       // The handle_new_user trigger will auto-create a profiles row immediately.
@@ -258,9 +265,10 @@ function Signup() {
 
             {/* ID Card Upload */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">College ID Card <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">College ID Card <span className="text-red-500">*</span></label>
               <div onClick={() => idCardInputRef.current.click()}
-                className="relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 h-32 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50">
+                className="relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 h-32 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50"
+                style={{ borderColor: error?.includes("ID card") ? "#ef4444" : undefined }}>
                 {idCardPreview
                   ? <img src={idCardPreview} alt="ID Card" className="h-full w-full object-contain rounded-xl p-2" />
                   : <div className="text-center">

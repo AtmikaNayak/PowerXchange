@@ -9,27 +9,100 @@ export default function AdminTransactions() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    fetchTransactions();
+    checkAdminAndLoad();
   }, [filter]);
+
+  async function checkAdminAndLoad() {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data?.session) { navigate("/login"); return; }
+      const session = data.session;
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles").select("role").eq("id", session.user.id).single();
+      if (profileError || !profileData || profileData.role !== "admin") { navigate("/home"); return; }
+      await fetchTransactions();
+    } catch (err) {
+      console.error("Auth check error:", err);
+      setLoading(false);
+    }
+  }
 
   async function fetchTransactions() {
     setLoading(true);
-    let query = supabase
-      .from("transactions")
-      .select("*, buyer:profiles!buyer_id(name, college), seller:profiles!seller_id(name, college), books(title)");
+    try {
+      // Step 1: Fetch transactions with filter
+      let query = supabase.from("transactions").select("*");
 
-    if (filter === "completed") {
-      query = query.eq("status", "completed");
-    } else if (filter === "pending") {
-      query = query.eq("status", "pending");
-    } else if (filter === "cancelled") {
-      query = query.eq("status", "cancelled");
+      if (filter === "completed") {
+        query = query.eq("status", "completed");
+      } else if (filter === "pending") {
+        query = query.eq("status", "pending");
+      } else if (filter === "cancelled") {
+        query = query.eq("status", "cancelled");
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data: txData, error: txError } = await query;
+
+      if (txError) {
+        console.error("Transaction fetch error:", txError);
+        throw txError;
+      }
+
+      console.log("Transactions fetched:", txData?.length || 0);
+
+      if (!txData || txData.length === 0) {
+        console.log("No transactions found in database");
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch books info
+      const bookIds = [...new Set(txData.map(tx => tx.book_id).filter(Boolean))];
+      const { data: booksData, error: booksError } = await supabase
+        .from("books")
+        .select("id, title")
+        .in("id", bookIds);
+      if (booksError) console.error("Books fetch error:", booksError);
+      const booksMap = {};
+      (booksData || []).forEach(b => { booksMap[b.id] = b; });
+
+      // Step 3: Fetch buyer profiles
+      const buyerIds = [...new Set(txData.map(tx => tx.buyer_id).filter(Boolean))];
+      const { data: buyersData, error: buyersError } = await supabase
+        .from("profiles")
+        .select("id, full_name, college")
+        .in("id", buyerIds);
+      if (buyersError) console.error("Buyers fetch error:", buyersError);
+      const buyersMap = {};
+      (buyersData || []).forEach(b => { buyersMap[b.id] = b; });
+
+      // Step 4: Fetch seller profiles
+      const sellerIds = [...new Set(txData.map(tx => tx.seller_id).filter(Boolean))];
+      const { data: sellersData, error: sellersError } = await supabase
+        .from("profiles")
+        .select("id, full_name, college")
+        .in("id", sellerIds);
+      if (sellersError) console.error("Sellers fetch error:", sellersError);
+      const sellersMap = {};
+      (sellersData || []).forEach(s => { sellersMap[s.id] = s; });
+
+      // Step 5: Combine data
+      const enriched = txData.map(tx => ({
+        ...tx,
+        books: booksMap[tx.book_id] || null,
+        buyer: buyersMap[tx.buyer_id] || null,
+        seller: sellersMap[tx.seller_id] || null,
+      }));
+
+      console.log("Enriched transactions:", enriched.length);
+      setTransactions(enriched);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setTransactions([]);
     }
-
-    query = query.order("created_at", { ascending: false });
-
-    const { data, error } = await query;
-    if (!error) setTransactions(data);
     setLoading(false);
   }
 
@@ -163,13 +236,13 @@ export default function AdminTransactions() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       <div>
-                        <p className="font-medium">{tx.buyer?.name || "N/A"}</p>
+                        <p className="font-medium">{tx.buyer?.full_name || "N/A"}</p>
                         <p className="text-xs text-gray-400">{tx.buyer?.college || ""}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       <div>
-                        <p className="font-medium">{tx.seller?.name || "N/A"}</p>
+                        <p className="font-medium">{tx.seller?.full_name || "N/A"}</p>
                         <p className="text-xs text-gray-400">{tx.seller?.college || ""}</p>
                       </div>
                     </td>

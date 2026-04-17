@@ -5,7 +5,9 @@
       "Bash(npm run:*)",
       "Bash(curl:*)",
       "Bash(cat client\\\\src\\\\supabase.js)",
-      "Bash(cat client\\\\src\\\\supabase.ts)"
+      "Bash(cat client\\\\src\\\\supabase.ts)",
+      "Bash(cat client/src/.env)",
+      "Bash(cat .env)"
     ]
   }
 }

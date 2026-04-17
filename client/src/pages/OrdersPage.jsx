@@ -119,6 +119,36 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       if (error) throw error;
 
+      // Send notification to buyer
+      try {
+        const buyerId = tx.buyer_id;
+        if (!buyerId) {
+          console.error("No buyer_id found for transaction", tx.id);
+        } else {
+          const bookTitle = tx.books?.title || "the book";
+          const sellerName = tx.seller?.full_name || tx.seller?.name || "The seller";
+
+          const { data: notifData, error: notifError } = await supabase
+            .from("notifications")
+            .insert({
+              user_id: buyerId,
+              type: "request_declined",
+              title: "Your request was declined",
+              message: `${sellerName} has declined your request for "${bookTitle}".`,
+              transaction_id: tx.id,
+            })
+            .select();
+
+          if (notifError) {
+            console.error("Notification insert error:", notifError);
+          } else {
+            console.log("Notification sent:", notifData);
+          }
+        }
+      } catch (notifErr) {
+        console.error("Error sending notification:", notifErr);
+      }
+
       // Restore book quantity
       if (tx.books?.id) {
         const { data: book } = await supabase
@@ -135,7 +165,7 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
         }
       }
 
-      setSuccessMsg("Order declined.");
+      setSuccessMsg("Order declined. The buyer has been notified.");
       setTimeout(() => setSuccessMsg(""), 3000);
       await loadData();
     } catch (err) {

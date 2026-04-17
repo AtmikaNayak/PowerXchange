@@ -177,12 +177,14 @@ export default function NotificationsPage({ isLoggedIn, onLogout, cart, wishlist
                      notif.type === "purchase_request" ? "bg-amber-100" :
                      notif.type === "request_accepted" ? "bg-emerald-100" :
                      notif.type === "exchange_request" ? "bg-teal-100" :
+                     notif.type === "request_declined" ? "bg-red-100" :
                      notif.type === "request_cancelled" ? "bg-red-100" :
                      "bg-gray-100"
                    }`}>
                      {notif.type === "purchase_request" ? "🛒" :
                       notif.type === "request_accepted" ? "🎉" :
                       notif.type === "exchange_request" ? "📦" :
+                      notif.type === "request_declined" ? "❌" :
                       notif.type === "request_cancelled" ? "❌" :
                       "🔔"}
                   </div>

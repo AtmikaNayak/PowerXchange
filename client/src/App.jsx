@@ -27,6 +27,7 @@ import OrdersPage from "./pages/OrdersPage";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotificationsPage from "./pages/NotificationsPage";
 
+<<<<<<< Updated upstream
 export default function App() {
   const [authState, setAuthState] = useState("loading");
   const [cart,     setCart]       = useState([]);
@@ -182,6 +183,10 @@ export default function App() {
     await supabase.auth.signOut();
     window.location.href = "/";
   };
+=======
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ add this
+>>>>>>> Stashed changes
 
   const isLoggedIn = authState === "user" || authState === "admin";
   const sharedProps = { isLoggedIn, onLogout: handleLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist };
@@ -205,6 +210,7 @@ export default function App() {
       }}
     >
       <Routes>
+<<<<<<< Updated upstream
         <Route path="/"            element={<Landing    {...sharedProps} />} />
         <Route path="/login"       element={<Login      onLogin={() => {}} />} />
         <Route path="/signup"      element={<Signup />} />
@@ -236,3 +242,18 @@ export default function App() {
     </BrowserRouter>
   );
 }
+=======
+        <Route path="/" element={<Landing />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/buybook" element={<Buybook />} />
+        <Route path="/home" element={<HomePage isLoggedIn={isLoggedIn} onLogout={handleLogout} />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+>>>>>>> Stashed changes

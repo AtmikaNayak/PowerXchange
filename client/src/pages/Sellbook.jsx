@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -29,10 +30,37 @@ const POPULAR_AUTHORS = [
 const CONDITIONS = ["Brand New", "Like New", "Good Condition", "Old Copies"];
 
 export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
+=======
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
+
+const GENRES = [
+  "Fiction", "Non-Fiction", "Science", "Mathematics", "Engineering",
+  "Medicine", "History", "Philosophy", "Economics", "Computer Science",
+  "Literature", "Self-Help", "Biography", "Law", "Art & Design",
+];
+
+const POPULAR_AUTHORS = [
+  { name: "H.C. Verma", field: "Physics", wiki: "https://en.wikipedia.org/wiki/Harish_Chandra_Verma" },
+  { name: "R.D. Sharma", field: "Mathematics", wiki: "https://en.wikipedia.org/wiki/R._D._Sharma" },
+  { name: "Morrison & Boyd", field: "Chemistry", wiki: "https://en.wikipedia.org/wiki/Robert_Thornton_Morrison" },
+  { name: "Cormen et al.", field: "Algorithms", wiki: "https://en.wikipedia.org/wiki/Introduction_to_Algorithms" },
+  { name: "Robert C. Martin", field: "Software", wiki: "https://en.wikipedia.org/wiki/Robert_C._Martin" },
+  { name: "Alex Xu", field: "System Design", wiki: "https://www.amazon.in/s?k=alex+xu" },
+  { name: "N. Gregory Mankiw", field: "Economics", wiki: "https://en.wikipedia.org/wiki/N._Gregory_Mankiw" },
+  { name: "Jane Reece", field: "Biology", wiki: "https://en.wikipedia.org/wiki/Jane_B._Reece" },
+];
+
+const CONDITIONS = ["Like New", "Good", "Fair", "Worn"];
+
+export default function SellBook() {
+>>>>>>> Stashed changes
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
+<<<<<<< Updated upstream
     title: "", author: "", genre: "", condition: "",
     price: "", description: "", name: "", phone: "",
     email: "", address: "", city: "", pincode: "",
@@ -69,6 +97,39 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
   const handleImageChange = (file) => {
     if (file) setImagePreview(URL.createObjectURL(file));
+=======
+    title: "",
+    author: "",
+    genre: "",
+    condition: "",
+    price: "",
+    description: "",
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    pincode: "",
+  });
+
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [authorQuery, setAuthorQuery] = useState("");
+  const [showAuthorDropdown, setShowAuthorDropdown] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const filteredAuthors = POPULAR_AUTHORS.filter((a) =>
+    a.name.toLowerCase().includes(authorQuery.toLowerCase()) && authorQuery.length > 0
+  );
+
+  const handleImageChange = (file) => {
+    if (file) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+>>>>>>> Stashed changes
   };
 
   const handleDrop = (e) => {
@@ -82,6 +143,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     setSelectedAuthor(author);
     setForm({ ...form, author: author.name });
     setAuthorQuery(author.name);
+<<<<<<< Updated upstream
     setShowDropdown(false);
   };
 
@@ -433,6 +495,21 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">
             ✓
           </div>
+=======
+    setShowAuthorDropdown(false);
+  };
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">✓</div>
+>>>>>>> Stashed changes
           <h2 className="text-2xl font-bold text-gray-900">Listing Submitted!</h2>
           <p className="text-gray-500 text-sm">Your book has been listed on PowerXchange.</p>
           <div className="flex gap-3 mt-2">
@@ -443,7 +520,11 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
               Go Home
             </button>
             <button
+<<<<<<< Updated upstream
               onClick={resetForm}
+=======
+              onClick={() => { setSubmitted(false); setForm({ title:"",author:"",genre:"",condition:"",price:"",description:"",name:"",phone:"",email:"",address:"",city:"",pincode:"" }); setImage(null); setImagePreview(null); setSelectedAuthor(null); setAuthorQuery(""); }}
+>>>>>>> Stashed changes
               className="border border-gray-300 text-gray-700 px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-50 transition"
             >
               List Another
@@ -454,6 +535,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
     );
   }
 
+<<<<<<< Updated upstream
   // Author Modal
   if (showAuthorModal) {
     return (
@@ -570,27 +652,48 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
       <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
       <div className="max-w-3xl mx-auto px-4 py-10">
 
+=======
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
+
+      <div className="max-w-3xl mx-auto px-4 py-10">
+
+        {/* Header */}
+>>>>>>> Stashed changes
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             List a <span className="text-blue-600">Book</span>
           </h1>
+<<<<<<< Updated upstream
           <p className="text-gray-500 text-sm mt-1">
             Fill in the details below to list your book for sale or exchange.
           </p>
+=======
+          <p className="text-gray-500 text-sm mt-1">Fill in the details below to list your book for sale or exchange.</p>
+>>>>>>> Stashed changes
         </div>
 
         <div className="flex flex-col gap-6">
 
+<<<<<<< Updated upstream
           {/* Image Upload */}
           <section className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">
               Book Image
             </h2>
+=======
+          {/* ── Section 1: Book Image ── */}
+          <section className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">Book Image</h2>
+
+>>>>>>> Stashed changes
             <div
               onClick={() => fileInputRef.current.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
+<<<<<<< Updated upstream
               className={[
                 "relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200",
                 "flex flex-col items-center justify-center gap-3",
@@ -618,6 +721,32 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 Remove image
               </button>
             )}
+=======
+              className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3
+                ${dragOver ? "border-blue-400 bg-blue-50" : "border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40"}
+                ${imagePreview ? "h-56" : "h-44"}`}
+            >
+              {imagePreview ? (
+                <>
+                  <img src={imagePreview} alt="Preview" className="h-full w-full object-contain rounded-xl p-2" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setImage(null); setImagePreview(null); }}
+                    className="absolute top-2 right-2 bg-white border border-gray-200 rounded-full w-7 h-7 flex items-center justify-center text-gray-500 hover:text-red-500 text-sm shadow-sm"
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl">📷</div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-gray-700">Click to upload or drag & drop</p>
+                    <p className="text-xs text-gray-400 mt-0.5">PNG, JPG, WEBP · Max 5MB</p>
+                  </div>
+                </>
+              )}
+            </div>
+>>>>>>> Stashed changes
             <input
               ref={fileInputRef}
               type="file"
@@ -627,6 +756,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
             />
           </section>
 
+<<<<<<< Updated upstream
           {/* Book Details */}
           <section className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">
@@ -636,11 +766,23 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
               <div className="sm:col-span-2">
                 <label className={labelClass}>Book Title</label>
+=======
+          {/* ── Section 2: Book Details ── */}
+          <section className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">Book Details</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              {/* Title */}
+              <div className="sm:col-span-2">
+                <label className="text-xs text-gray-500 block mb-1.5">Book Title *</label>
+>>>>>>> Stashed changes
                 <input
                   type="text"
                   placeholder="e.g. Introduction to Algorithms"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
+<<<<<<< Updated upstream
                   className={inputClass}
                 />
               </div>
@@ -650,11 +792,24 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 <input
                   type="text"
                   placeholder="Search or type author name"
+=======
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+
+              {/* Author with autocomplete */}
+              <div className="sm:col-span-2 relative">
+                <label className="text-xs text-gray-500 block mb-1.5">Author *</label>
+                <input
+                  type="text"
+                  placeholder="Search or type author name…"
+>>>>>>> Stashed changes
                   value={authorQuery}
                   onChange={(e) => {
                     setAuthorQuery(e.target.value);
                     setForm({ ...form, author: e.target.value });
                     setSelectedAuthor(null);
+<<<<<<< Updated upstream
                     setShowDropdown(true);
                   }}
                   onFocus={() => setShowDropdown(true)}
@@ -663,6 +818,17 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 />
 
                 {showDropdown && filteredAuthors.length > 0 && (
+=======
+                    setShowAuthorDropdown(true);
+                  }}
+                  onFocus={() => setShowAuthorDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowAuthorDropdown(false), 150)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+
+                {/* Dropdown suggestions */}
+                {showAuthorDropdown && filteredAuthors.length > 0 && (
+>>>>>>> Stashed changes
                   <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                     {filteredAuthors.map((author) => (
                       <button
@@ -682,11 +848,19 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                   </div>
                 )}
 
+<<<<<<< Updated upstream
+=======
+                {/* Selected author chip with hyperlink */}
+>>>>>>> Stashed changes
                 {selectedAuthor && (
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs text-gray-500">Author page:</span>
                     
+<<<<<<< Updated upstream
                       <a href={selectedAuthor.wiki}
+=======
+                      href={selectedAuthor.wiki}
+>>>>>>> Stashed changes
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-blue-100 hover:border-blue-400 transition"
@@ -694,13 +868,18 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                       <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-[10px]">
                         {selectedAuthor.name[0]}
                       </span>
+<<<<<<< Updated upstream
                       <span>{selectedAuthor.name}</span>
+=======
+                      {selectedAuthor.name}
+>>>>>>> Stashed changes
                       <span className="text-blue-400">↗</span>
                     </a>
                   </div>
                 )}
               </div>
 
+<<<<<<< Updated upstream
               <div className="sm:col-span-2 relative">
                 <label className={labelClass}>Genre</label>
                 <input
@@ -774,6 +953,33 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                           ? "bg-blue-600 text-white border-blue-600"
                           : "bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300",
                       ].join(" ")}
+=======
+              {/* Genre */}
+              <div>
+                <label className="text-xs text-gray-500 block mb-1.5">Genre *</label>
+                <select
+                  value={form.genre}
+                  onChange={(e) => setForm({ ...form, genre: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition text-gray-700"
+                >
+                  <option value="">Select genre…</option>
+                  {GENRES.map((g) => <option key={g}>{g}</option>)}
+                </select>
+              </div>
+
+              {/* Condition */}
+              <div>
+                <label className="text-xs text-gray-500 block mb-1.5">Condition *</label>
+                <div className="flex gap-2 flex-wrap">
+                  {CONDITIONS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setForm({ ...form, condition: c })}
+                      className={`text-xs px-3 py-1.5 rounded-full border font-medium transition
+                        ${form.condition === c
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-gray-50 text-gray-600 border-gray-200 hover:border-blue-300"}`}
+>>>>>>> Stashed changes
                     >
                       {c}
                     </button>
@@ -781,6 +987,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
                 </div>
               </div>
 
+<<<<<<< Updated upstream
               <div className="sm:col-span-2">
                 <label className={labelClass}>Description</label>
                 <textarea
@@ -879,34 +1086,127 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
               <div className="sm:col-span-2">
                 <label className={labelClass}>Street Address</label>
+=======
+              {/* Description */}
+              <div className="sm:col-span-2">
+                <label className="text-xs text-gray-500 block mb-1.5">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Any notes about the book — edition, missing pages, highlights, etc."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition resize-none"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Section 3: Pricing ── */}
+          <section className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">Pricing</h2>
+            <div className="max-w-xs">
+              <label className="text-xs text-gray-500 block mb-1.5">Asking Price (₹) *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">Set to 0 if you'd prefer exchange only.</p>
+            </div>
+          </section>
+
+          {/* ── Section 4: Contact & Address ── */}
+          <section className="bg-white border border-gray-200 rounded-2xl p-6">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">Contact & Address</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1.5">Full Name *</label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 block mb-1.5">Phone Number *</label>
+                <input
+                  type="tel"
+                  placeholder="+91 XXXXX XXXXX"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs text-gray-500 block mb-1.5">Email *</label>
+                <input
+                  type="email"
+                  placeholder="you@email.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs text-gray-500 block mb-1.5">Street Address *</label>
+>>>>>>> Stashed changes
                 <input
                   type="text"
                   placeholder="House no, Street, Locality"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
+<<<<<<< Updated upstream
                   className={inputClass}
+=======
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+>>>>>>> Stashed changes
                 />
               </div>
 
               <div>
+<<<<<<< Updated upstream
                 <label className={labelClass}>City</label>
+=======
+                <label className="text-xs text-gray-500 block mb-1.5">City *</label>
+>>>>>>> Stashed changes
                 <input
                   type="text"
                   placeholder="e.g. Mangaluru"
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
+<<<<<<< Updated upstream
                   className={inputClass}
+=======
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+>>>>>>> Stashed changes
                 />
               </div>
 
               <div>
+<<<<<<< Updated upstream
                 <label className={labelClass}>PIN Code</label>
+=======
+                <label className="text-xs text-gray-500 block mb-1.5">PIN Code *</label>
+>>>>>>> Stashed changes
                 <input
                   type="text"
                   placeholder="575001"
                   maxLength={6}
                   value={form.pincode}
                   onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+<<<<<<< Updated upstream
                   className={inputClass}
                 />
               </div>
@@ -926,6 +1226,23 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
             </button>
             <button
               type="button"
+=======
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Submit ── */}
+          <div className="flex gap-3 pb-6">
+            <button
+              onClick={handleSubmit}
+              className="bg-gradient-to-r from-blue-600 to-cyan-400 text-white text-sm font-bold px-8 py-3 rounded-full shadow-md shadow-blue-200 hover:shadow-blue-300 hover:scale-105 transition-all duration-200"
+            >
+              Submit Listing
+            </button>
+            <button
+>>>>>>> Stashed changes
               onClick={() => navigate(-1)}
               className="text-sm border border-gray-300 rounded-full px-6 py-3 hover:bg-gray-50 transition text-gray-600"
             >
@@ -935,7 +1252,10 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
 
         </div>
       </div>
+<<<<<<< Updated upstream
       <Footer />
+=======
+>>>>>>> Stashed changes
     </div>
   );
 }

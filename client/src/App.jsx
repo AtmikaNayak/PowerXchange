@@ -78,9 +78,19 @@ export default function App() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, is_blocked")
         .eq("id", uid)
         .single();
+
+      // If user is blocked, sign them out immediately
+      if (profile?.is_blocked) {
+        await supabase.auth.signOut();
+        setAuthState("guest");
+        userIdRef.current = null;
+        setCart([]);
+        setWishlist([]);
+        return;
+      }
 
       if (profile?.role === "admin") {
         setAuthState("admin");

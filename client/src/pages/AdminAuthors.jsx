@@ -10,7 +10,10 @@ export default function AdminAuthors() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", genre: "", description: "", photo_url: "" });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchAuthors();
@@ -91,6 +94,8 @@ export default function AdminAuthors() {
       description: author.description || "",
       photo_url: author.photo_url || "",
     });
+    setPhotoFile(null);
+    setPhotoPreview(author.photo_url || null);
     setShowEditModal(true);
   }
 
@@ -98,13 +103,43 @@ export default function AdminAuthors() {
     if (!editingAuthor) return;
     setSaving(true);
 
+    let photoUrl = editForm.photo_url;
+
+    // Upload new photo if selected
+    if (photoFile) {
+      setUploadingPhoto(true);
+      try {
+        const fileExt = photoFile.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `authors/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("profile-images")
+          .upload(filePath, photoFile, { cacheControl: "3600", upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("profile-images")
+          .getPublicUrl(filePath);
+
+        photoUrl = publicUrl;
+      } catch (err) {
+        alert("Error uploading photo: " + err.message);
+        setUploadingPhoto(false);
+        setSaving(false);
+        return;
+      }
+      setUploadingPhoto(false);
+    }
+
     const { error } = await supabase
       .from("authors")
       .update({
         name: editForm.name,
         genre: editForm.genre,
         description: editForm.description,
-        photo_url: editForm.photo_url,
+        photo_url: photoUrl,
       })
       .eq("id", editingAuthor.id);
 
@@ -303,34 +338,57 @@ export default function AdminAuthors() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL</label>
-                <input
-                  type="url"
-                  value={editForm.photo_url}
-                  onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  placeholder="https://example.com/author-photo.jpg"
-                />
-                {editForm.photo_url && (
-                  <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <div
+                  onClick={() => document.getElementById("author-photo-input").click()}
+                  className="relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 h-32 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  {photoPreview ? (
                     <img
-                      src={editForm.photo_url}
+                      src={photoPreview}
                       alt="Preview"
-                      className="w-20 h-20 rounded-full object-cover border border-gray-200"
-                      onError={(e) => { e.target.style.display = 'none'; }}
+                      className="h-full w-full object-contain rounded-xl p-2"
                     />
-                  </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xl mx-auto mb-1">📷</div>
+                      <p className="text-xs font-medium text-gray-600">Click to upload photo</p>
+                      <p className="text-xs text-gray-400">PNG, JPG up to 2MB</p>
+                    </div>
+                  )}
+                </div>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={() => { setPhotoPreview(null); setPhotoFile(null); }}
+                    className="mt-2 text-xs text-red-500 hover:text-red-700 transition"
+                  >
+                    Remove photo
+                  </button>
                 )}
+                <input
+                  id="author-photo-input"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setPhotoFile(file);
+                      setPhotoPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleSaveEdit}
-                disabled={saving}
+                disabled={saving || uploadingPhoto}
                 className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {uploadingPhoto ? "Uploading photo..." : saving ? "Saving..." : "Save Changes"}
               </button>
               <button
                 onClick={() => { setShowEditModal(false); setEditingAuthor(null); }}

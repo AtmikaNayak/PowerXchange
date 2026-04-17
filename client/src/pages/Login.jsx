@@ -37,9 +37,16 @@ function Login({ onLogin }) {
       // Check admin via profiles.role column
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, is_blocked")
         .eq("id", data.user.id)
         .single();
+
+      // Block suspended users from logging in
+      if (profileData?.is_blocked) {
+        await supabase.auth.signOut();
+        setError("Your account has been suspended. Please contact support.");
+        return;
+      }
 
       if (profileData?.role === "admin") {
         navigate("/admin");

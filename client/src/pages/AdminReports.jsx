@@ -69,6 +69,49 @@ export default function AdminReports() {
     setActionLoading(false);
   }
 
+  async function handleSuspendUser(userId, reportId) {
+    if (!confirm("Are you sure you want to suspend this user? They will be blocked from the platform.")) return;
+    setActionLoading(true);
+    const { error } = await supabase.from("profiles").update({ is_blocked: true }).eq("id", userId);
+    if (error) {
+      console.error("Suspend error:", error);
+      alert("Error: " + error.message);
+    } else {
+      // Also move the report to resolved
+      const rid = reportId || selectedReport?.id;
+      if (rid) {
+        await supabase.from("reports").update({ status: "resolved" }).eq("id", rid);
+      }
+      alert("User suspended and report resolved!");
+      fetchReports();
+      setShowModal(false);
+      setSelectedReport(null);
+    }
+    setActionLoading(false);
+  }
+
+  async function handleDeleteBook(bookId, reportId) {
+    if (!confirm("Are you sure you want to delete this book listing? This action cannot be undone.")) return;
+    setActionLoading(true);
+    console.log("Deleting book with ID:", bookId);
+    const { error } = await supabase.from("books").delete().eq("id", bookId);
+    if (error) {
+      console.error("Delete error:", error);
+      alert("Error deleting book: " + error.message);
+    } else {
+      // Also move the report to resolved
+      const rid = reportId || selectedReport?.id;
+      if (rid) {
+        await supabase.from("reports").update({ status: "resolved" }).eq("id", rid);
+      }
+      alert("Book deleted and report resolved!");
+      fetchReports();
+      setShowModal(false);
+      setSelectedReport(null);
+    }
+    setActionLoading(false);
+  }
+
   async function handleDelete(reportId) {
     if (!confirm("Delete this report?")) return;
     setActionLoading(true);
@@ -81,12 +124,26 @@ export default function AdminReports() {
   async function viewDetails(report) {
     setSelectedReport(report);
     setShowModal(true);
+
+    // Fetch target data based on report type
     if (report.report_type === "book") {
-      const { data } = await supabase.from("books").select("*").eq("id", report.target_id).single();
-      setSelectedReport(prev => ({ ...prev, targetData: data }));
-    } else {
-      const { data } = await supabase.from("profiles").select("*").eq("id", report.target_id).single();
-      setSelectedReport(prev => ({ ...prev, targetData: data }));
+      const { data, error } = await supabase.from("books").select("*").eq("id", report.target_id).single();
+      if (error) {
+        console.error("Error fetching book:", error);
+        setSelectedReport(prev => ({ ...prev, targetData: { error: true } }));
+      } else {
+        console.log("Book data loaded:", data);
+        setSelectedReport(prev => ({ ...prev, targetData: data }));
+      }
+    } else if (report.report_type === "seller") {
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", report.target_id).single();
+      if (error) {
+        console.error("Error fetching profile:", error);
+        setSelectedReport(prev => ({ ...prev, targetData: { error: true } }));
+      } else {
+        console.log("Profile data loaded:", data);
+        setSelectedReport(prev => ({ ...prev, targetData: data }));
+      }
     }
   }
 
@@ -173,10 +230,24 @@ export default function AdminReports() {
                     View Details
                   </button>
                   {report.status === "pending" && (
-                    <button onClick={() => handleUpdateStatus(report.id, "resolved")} disabled={actionLoading}
-                      className="flex-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-medium disabled:opacity-50">
-                      Resolve
-                    </button>
+                    <>
+                      {report.report_type === "seller" && (
+                        <button onClick={() => handleSuspendUser(report.target_id, report.id)} disabled={actionLoading}
+                          className="px-3 py-2 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50">
+                          Suspend
+                        </button>
+                      )}
+                      {report.report_type === "book" && (
+                        <button onClick={() => handleDeleteBook(report.target_id, report.id)} disabled={actionLoading}
+                          className="px-3 py-2 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50">
+                          Delete
+                        </button>
+                      )}
+                      <button onClick={() => handleUpdateStatus(report.id, "resolved")} disabled={actionLoading}
+                        className="flex-1 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-medium disabled:opacity-50">
+                        Resolve
+                      </button>
+                    </>
                   )}
                   <button onClick={() => handleDelete(report.id)} disabled={actionLoading}
                     className="px-3 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
@@ -225,28 +296,41 @@ export default function AdminReports() {
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
                   {selectedReport.report_type === "book" ? "Book Info" : "Reported User Info"}
                 </p>
-                {selectedReport.targetData ? (
-                  selectedReport.report_type === "book" ? (
-                    <>
-                      <div className="flex justify-between"><span className="text-gray-500">Title:</span><span className="font-medium">{selectedReport.targetData.title}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Author:</span><span className="font-medium">{selectedReport.targetData.author}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Price:</span><span className="font-medium">₹{selectedReport.targetData.price}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Seller:</span><span className="font-medium">{selectedReport.targetData.seller_name}</span></div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between"><span className="text-gray-500">Name:</span><span className="font-medium">{selectedReport.targetData.full_name}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Email:</span><span className="font-medium">{selectedReport.targetData.email}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">College:</span><span className="font-medium">{selectedReport.targetData.college}</span></div>
-                    </>
-                  )
-                ) : <p className="text-gray-400 italic text-xs">Loading...</p>}
+                {selectedReport.targetData === undefined || selectedReport.targetData === null ? (
+                  <p className="text-gray-400 italic text-xs">Loading...</p>
+                ) : selectedReport.targetData?.error ? (
+                  <p className="text-red-500 text-xs">Failed to load {selectedReport.report_type === "book" ? "book" : "user"} information. It may have been deleted.</p>
+                ) : selectedReport.report_type === "book" ? (
+                  <>
+                    <div className="flex justify-between"><span className="text-gray-500">Title:</span><span className="font-medium">{selectedReport.targetData?.title || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Author:</span><span className="font-medium">{selectedReport.targetData?.author || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Price:</span><span className="font-medium">₹{selectedReport.targetData?.price || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Seller:</span><span className="font-medium">{selectedReport.targetData?.seller_name || "N/A"}</span></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between"><span className="text-gray-500">Name:</span><span className="font-medium">{selectedReport.targetData?.full_name || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Email:</span><span className="font-medium">{selectedReport.targetData?.email || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">College:</span><span className="font-medium">{selectedReport.targetData?.college || "N/A"}</span></div>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
               {selectedReport.status === "pending" && (
                 <>
+                  {selectedReport.report_type === "seller" && selectedReport.targetData?.id ? (
+                    <button onClick={() => handleSuspendUser(selectedReport.targetData.id, selectedReport.id)} disabled={actionLoading}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">
+                      Suspend User
+                    </button>
+                  ) : selectedReport.report_type === "book" && selectedReport.targetData?.id ? (
+                    <button onClick={() => handleDeleteBook(selectedReport.targetData.id, selectedReport.id)} disabled={actionLoading}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">
+                      Delete Book
+                    </button>
+                  ) : null}
                   <button onClick={() => handleUpdateStatus(selectedReport.id, "resolved")} disabled={actionLoading}
                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium">
                     Mark Resolved
@@ -259,7 +343,7 @@ export default function AdminReports() {
               )}
               <button onClick={() => handleDelete(selectedReport.id)} disabled={actionLoading}
                 className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-medium">
-                Delete
+                Delete Report
               </button>
               <button onClick={() => { setShowModal(false); setSelectedReport(null); }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">

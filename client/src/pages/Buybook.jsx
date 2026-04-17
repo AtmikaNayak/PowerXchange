@@ -22,35 +22,71 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
 
-      // Fetch book WITHOUT profiles join to avoid RLS issues
-      const { data, error } = await supabase
+      // First, fetch the book details
+      const { data: bookData, error: bookError } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (!error && data) {
-        console.log("Book fetched:", {
-          id: data.id,
-          title: data.title,
-          seller_id: data.seller_id,
-          seller_name: data.seller_name,
-          seller_college: data.seller_college
-        });
-        setBook({
-          ...data,
-          seller_id: data.seller_id,
-          seller_name: data.seller_name || "Seller",
-          seller_email: data.seller_email,
-          seller_college: data.seller_college,
-          seller_phone: data.seller_phone,
-          seller_address: data.seller_address,
-          seller_city: data.seller_city,
-          seller_pincode: data.seller_pincode,
-        });
-      } else {
-        console.error("Error fetching book:", error);
+      if (bookError || !bookData) {
+        console.error("Error fetching book:", bookError);
+        setLoading(false);
+        return;
       }
+
+      // Then fetch seller profile information
+      let sellerInfo = {};
+      if (bookData.seller_id) {
+        try {
+          const { data: sellerProfile, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, email, college, phone")
+            .eq("id", bookData.seller_id)
+            .single();
+
+          if (!profileError && sellerProfile) {
+            sellerInfo = {
+              seller_name: sellerProfile.full_name || "Seller",
+              seller_email: sellerProfile.email,
+              seller_college: sellerProfile.college,
+              seller_phone: sellerProfile.phone,
+            };
+          } else {
+            sellerInfo = {
+              seller_name: "Seller",
+              seller_email: null,
+              seller_college: "College info not available",
+              seller_phone: null,
+            };
+          }
+        } catch (err) {
+          console.error("Error fetching seller profile:", err);
+          sellerInfo = {
+            seller_name: "Seller",
+            seller_email: null,
+            seller_college: "College info not available",
+            seller_phone: null,
+          };
+        }
+      } else {
+        sellerInfo = {
+          seller_name: "Seller",
+          seller_email: null,
+          seller_college: "College info not available",
+          seller_phone: null,
+        };
+      }
+
+      console.log("Book and seller info:", {
+        book: bookData,
+        seller: sellerInfo
+      });
+
+      setBook({
+        ...bookData,
+        ...sellerInfo
+      });
       setLoading(false);
     };
 
@@ -141,10 +177,10 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
         // Fetch buyer name for the notification
         const { data: buyerProfile } = await supabase
           .from("profiles")
-          .select("full_name, name")
+          .select("full_name")
           .eq("id", user.id)
           .single();
-        const buyerName = buyerProfile?.full_name || buyerProfile?.name || "A buyer";
+        const buyerName = buyerProfile?.full_name || "A buyer";
 
         await supabase.from("notifications").insert({
           user_id: book.seller_id,

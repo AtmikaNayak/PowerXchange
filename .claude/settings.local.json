@@ -7,7 +7,9 @@
       "Bash(cat client\\\\src\\\\supabase.js)",
       "Bash(cat client\\\\src\\\\supabase.ts)",
       "Bash(cat client/src/.env)",
-      "Bash(cat .env)"
+      "Bash(cat .env)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5173)"
     ]
   }
 }

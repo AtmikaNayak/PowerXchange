@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import UserBadge from "../components/UserBadge";
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -194,7 +195,9 @@ export default function AdminUsers() {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{user.full_name || "—"}</p>
+                            <p className="font-medium text-gray-900">
+                              <UserBadge userName={user.full_name || "—"} userId={user.id} />
+                            </p>
                             <p className="text-xs text-gray-400">{user.email}</p>
                           </div>
                         </div>
@@ -298,7 +301,9 @@ export default function AdminUsers() {
                     </div>
                   )}
                   <div>
-                    <p className="font-bold text-gray-900 text-lg">{selectedUser.full_name || "—"}</p>
+                    <p className="font-bold text-gray-900 text-lg">
+                      <UserBadge userName={selectedUser.full_name || "—"} userId={selectedUser.id} />
+                    </p>
                     <p className="text-sm text-gray-400">{selectedUser.email}</p>
                     {selectedUser.usn && (
                       <p className="text-xs text-indigo-500 font-medium mt-0.5">USN: {selectedUser.usn}</p>

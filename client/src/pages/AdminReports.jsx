@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import UserBadge from "../components/UserBadge";
 
 const REASON_LABELS = {
   inappropriate_content: "Inappropriate Content",
@@ -215,7 +216,11 @@ export default function AdminReports() {
                 </div>
 
                 <h3 className="font-semibold text-gray-900 mb-1 truncate">{REASON_LABELS[report.reason] || report.reason}</h3>
-                <p className="text-sm text-gray-500 mb-0.5">By: <span className="text-gray-700 font-medium">{report.reporter?.full_name || "Anonymous"}</span></p>
+                <p className="text-sm text-gray-500 mb-0.5">
+                  By: <span className="text-gray-700 font-medium">
+                    <UserBadge userName={report.reporter?.full_name || "Anonymous"} userId={report.reported_by} />
+                  </span>
+                </p>
                 <p className="text-xs text-gray-400 mb-1">{report.reporter?.college || ""}</p>
                 {report.description && (
                   <p className="text-xs text-gray-500 mb-3 line-clamp-2 italic">"{report.description}"</p>
@@ -281,7 +286,9 @@ export default function AdminReports() {
                                                             "bg-gray-100 text-gray-600 border-gray-200"
                   }`}>{selectedReport.status}</span>
                 </div>
-                <div className="flex justify-between"><span className="text-gray-500">Reported By:</span><span className="font-medium">{selectedReport.reporter?.full_name || "Anonymous"}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Reported By:</span><span className="font-medium">
+                  <UserBadge userName={selectedReport.reporter?.full_name || "Anonymous"} userId={selectedReport.reported_by} />
+                </span></div>
                 <div className="flex justify-between"><span className="text-gray-500">Date:</span><span className="font-medium">{new Date(selectedReport.created_at).toLocaleString()}</span></div>
               </div>
 
@@ -305,11 +312,15 @@ export default function AdminReports() {
                     <div className="flex justify-between"><span className="text-gray-500">Title:</span><span className="font-medium">{selectedReport.targetData?.title || "N/A"}</span></div>
                     <div className="flex justify-between"><span className="text-gray-500">Author:</span><span className="font-medium">{selectedReport.targetData?.author || "N/A"}</span></div>
                     <div className="flex justify-between"><span className="text-gray-500">Price:</span><span className="font-medium">₹{selectedReport.targetData?.price || "N/A"}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-500">Seller:</span><span className="font-medium">{selectedReport.targetData?.seller_name || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Seller:</span><span className="font-medium">
+                      <UserBadge userName={selectedReport.targetData?.seller_name || "N/A"} userId={selectedReport.targetData?.seller_id} />
+                    </span></div>
                   </>
                 ) : (
                   <>
-                    <div className="flex justify-between"><span className="text-gray-500">Name:</span><span className="font-medium">{selectedReport.targetData?.full_name || "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Name:</span><span className="font-medium">
+                      <UserBadge userName={selectedReport.targetData?.full_name || "N/A"} userId={selectedReport.targetData?.id} />
+                    </span></div>
                     <div className="flex justify-between"><span className="text-gray-500">Email:</span><span className="font-medium">{selectedReport.targetData?.email || "N/A"}</span></div>
                     <div className="flex justify-between"><span className="text-gray-500">College:</span><span className="font-medium">{selectedReport.targetData?.college || "N/A"}</span></div>
                   </>

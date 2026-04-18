@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import { Star, Edit2, Trash2, X, Check } from "lucide-react";
+import UserBadge from "./UserBadge";
 
 function StarRating({ rating, onRatingChange, interactive = false, size = "md" }) {
   const [hoverRating, setHoverRating] = useState(0);
@@ -410,7 +411,7 @@ export default function Reviews({ bookId, currentUser }) {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-800">
-                            {review.profiles?.full_name || "User"}
+                            <UserBadge userName={review.profiles?.full_name || "User"} userId={review.user_id} />
                           </p>
                           <p className="text-xs text-gray-500">
                             {review.profiles?.college || "College not specified"}

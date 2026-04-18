@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import Reviews from "../components/Reviews";
 import ReportModal from "../components/ReportModal";
 import AuthorName from "../components/AuthorName";
+import UserBadge from "../components/UserBadge";
 import { Flag } from "lucide-react";
 
 const CONDITION_STYLES = {
@@ -220,7 +221,9 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
                   {(book.seller_name || "S")[0]}
                 </div>
                 <div>
-                  <p className="font-semibold text-blue-950 text-base">{book.seller_name || "Seller"}</p>
+                  <p className="font-semibold text-blue-950 text-base">
+                    <UserBadge userName={book.seller_name || "Seller"} userId={book.seller_id} />
+                  </p>
                   <p className="text-sm text-slate-400">{book.seller_college || "N/A"}</p>
                 </div>
               </div>

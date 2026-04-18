@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import AuthorName from "../components/AuthorName";
+import UserBadge from "../components/UserBadge";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -235,7 +236,9 @@ export default function AdminDashboard() {
                 recentUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-800">{user.full_name || user.email}</p>
+                      <p className="font-medium text-gray-800">
+                        <UserBadge userName={user.full_name || user.email} userId={user.id} />
+                      </p>
                       <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -266,7 +269,9 @@ export default function AdminDashboard() {
                 pendingVerifications.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-800">{user.full_name || user.email}</p>
+                      <p className="font-medium text-gray-800">
+                        <UserBadge userName={user.full_name || user.email} userId={user.id} />
+                      </p>
                       <p className="text-sm text-gray-500">{user.college || user.usn}</p>
                     </div>
                     <Link

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import UserBadge from "../components/UserBadge";
 
 export default function AdminTransactions() {
   const navigate = useNavigate();
@@ -236,13 +237,17 @@ export default function AdminTransactions() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       <div>
-                        <p className="font-medium">{tx.buyer?.full_name || "N/A"}</p>
+                        <p className="font-medium">
+                          <UserBadge userName={tx.buyer?.full_name || "N/A"} userId={tx.buyer?.id} />
+                        </p>
                         <p className="text-xs text-gray-400">{tx.buyer?.college || ""}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       <div>
-                        <p className="font-medium">{tx.seller?.full_name || "N/A"}</p>
+                        <p className="font-medium">
+                          <UserBadge userName={tx.seller?.full_name || "N/A"} userId={tx.seller?.id} />
+                        </p>
                         <p className="text-xs text-gray-400">{tx.seller?.college || ""}</p>
                       </div>
                     </td>

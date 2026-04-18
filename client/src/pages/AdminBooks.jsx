@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import AuthorName from "../components/AuthorName";
+import UserBadge from "../components/UserBadge";
 
 export default function AdminBooks() {
   const navigate = useNavigate(); // ✅ added
@@ -187,7 +188,9 @@ export default function AdminBooks() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 mb-3">
-                    <p>Seller: {book.profiles?.full_name || book.seller_name || "Unknown"}</p>
+                    <p>
+                      Seller: <UserBadge userName={book.profiles?.full_name || book.seller_name || "Unknown"} userId={book.profiles?.id || book.seller_id} />
+                    </p>
                     <p>College: {book.profiles?.college || "N/A"}</p>
                   </div>
                   <p className="text-xs text-gray-400 mb-4">

@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { ArrowLeft, Printer, CheckCircle, XCircle, Clock, Package, User, MapPin, Mail, Phone, Calendar, Hash, FileText } from "lucide-react";
+import UserBadge from "../components/UserBadge";
 
 const STATUS_CONFIG = {
   pending:   { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-300",   icon: Clock,       label: "Pending",   dot: "bg-amber-500" },
@@ -201,7 +202,9 @@ export default function TransactionDetail({ isLoggedIn, onLogout, cart, wishlist
                 {isBuyer && <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium normal-case">You</span>}
               </h2>
               <div className="space-y-2.5">
-                <p className="text-sm font-semibold text-gray-900">{buyer.full_name || "N/A"}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  <UserBadge userName={buyer.full_name || "N/A"} userId={buyer.id} />
+                </p>
                 {buyer.college && (
                   <p className="text-sm text-gray-500 flex items-center gap-2">
                     <MapPin size={13} className="text-gray-400" />
@@ -231,7 +234,9 @@ export default function TransactionDetail({ isLoggedIn, onLogout, cart, wishlist
                 {!isBuyer && <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium normal-case">You</span>}
               </h2>
               <div className="space-y-2.5">
-                <p className="text-sm font-semibold text-gray-900">{seller.full_name || book.seller_name || "N/A"}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  <UserBadge userName={seller.full_name || book.seller_name || "N/A"} userId={seller.id} />
+                </p>
                 {seller.college && (
                   <p className="text-sm text-gray-500 flex items-center gap-2">
                     <MapPin size={13} className="text-gray-400" />

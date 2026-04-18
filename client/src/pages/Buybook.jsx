@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AuthorName from "../components/AuthorName";
+import UserBadge from "../components/UserBadge";
 
 export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFromCart }) {
   const { id } = useParams();
@@ -257,7 +258,9 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
             {(book.seller_name || "S")[0]}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{book.seller_name || "Seller"}</p>
+            <p className="text-sm font-medium text-gray-900">
+              <UserBadge userName={book.seller_name || "Seller"} userId={book.seller_id} />
+            </p>
             <p className="text-xs text-gray-500">{book.college || book.seller_college || "College info not available"}</p>
           </div>
         </div>

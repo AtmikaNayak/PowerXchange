@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Package, ShoppingBag, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
+import UserBadge from "../components/UserBadge";
 
 const STATUS_STYLES = {
   pending:   { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200", icon: Clock,       label: "Pending" },
@@ -325,7 +326,7 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800">
-                  {role === "buyer" ? "Seller" : "Buyer"}: {personName}
+                  {role === "buyer" ? "Seller" : "Buyer"}: <UserBadge userName={personName} userId={otherPerson?.id} />
                 </p>
                 {personCollege && <p className="text-xs text-gray-400">{personCollege}</p>}
               </div>

@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import { AUTHORS, BOOKS } from "./HomePage";
 import Footer from "./Footer";
+import AuthorName from "../components/AuthorName";
 
 export default function AuthorPage({ isLoggedIn, onLogout }) {
   const { id } = useParams();
@@ -103,7 +104,10 @@ export default function AuthorPage({ isLoggedIn, onLogout }) {
             }} />
           <div className="flex-1">
             <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-1">{author.genre || "Author"}</p>
-            <h1 className="text-3xl font-bold text-blue-950 mb-3">{author.name}</h1>
+            <h1 className="text-3xl font-bold text-blue-950 mb-3 flex items-center gap-2">
+              {author.name}
+              <AuthorName authorName="" authorId={id} showTick={true} />
+            </h1>
             <p className="text-slate-600 text-base leading-relaxed">{author.description || author.about || "No description available."}</p>
           </div>
         </div>

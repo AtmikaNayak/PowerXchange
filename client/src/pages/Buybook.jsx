@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import AuthorName from "../components/AuthorName";
 
 export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFromCart }) {
   const { id } = useParams();
@@ -230,7 +231,9 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">{book.title}</h1>
-              <p className="text-sm text-gray-500 mt-1">{book.author}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                <AuthorName authorName={book.author} authorId={book.author_id} />
+              </p>
               <div className="flex gap-2 mt-3 flex-wrap">
                 {book.condition && (
                   <span className="text-xs px-2.5 py-1 rounded-md bg-green-100 text-green-700 font-medium">

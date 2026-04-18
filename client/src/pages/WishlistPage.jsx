@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import AuthorName from "../components/AuthorName";
 
 export default function WishlistPage({ isLoggedIn, onLogout, cart = [], wishlist = [], addToCart, removeFromCart, removeFromWishlist }) {
   const navigate = useNavigate();
@@ -83,7 +84,9 @@ export default function WishlistPage({ isLoggedIn, onLogout, cart = [], wishlist
                       {book.title}
                     </h3>
                     {book.author && (
-                      <p className="text-xs text-slate-400 mt-0.5">by {book.author}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        by <AuthorName authorName={book.author} authorId={book.author_id} />
+                      </p>
                     )}
                     <p className="text-sm font-bold text-blue-700 mt-1">
                       {book.price > 0 ? `₹${book.price}` : "Free / Exchange"}

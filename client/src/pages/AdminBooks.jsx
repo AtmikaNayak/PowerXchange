@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import AuthorName from "../components/AuthorName";
 
 export default function AdminBooks() {
   const navigate = useNavigate(); // ✅ added
@@ -170,7 +171,9 @@ export default function AdminBooks() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-1 truncate">{book.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">by {book.author}</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    by <AuthorName authorName={book.author} authorId={book.author_id} />
+                  </p>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-lg font-bold text-indigo-600">
                       {book.price === 0 ? "Free" : `₹${book.price}`}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import AuthorName from "../components/AuthorName";
 
 export default function ConditionBooks({ isLoggedIn, onLogout, cart, wishlist }) {
   const { condition } = useParams();
@@ -87,7 +88,9 @@ export default function ConditionBooks({ isLoggedIn, onLogout, cart, wishlist })
                   <p className="font-semibold text-blue-950 text-sm leading-snug line-clamp-2">
                     {book.title}
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">{book.author}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    <AuthorName authorName={book.author} authorId={book.author_id} />
+                  </p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-bold text-blue-700">₹{book.price}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold text-white ${conditionColors[book.condition] || "bg-gray-500"}`}>

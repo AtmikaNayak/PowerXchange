@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Edit2, Trash2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
+import AuthorName from "../components/AuthorName";
 
 export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
   const navigate = useNavigate();
@@ -308,7 +309,9 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div>
                         <h3 className="font-semibold text-gray-900 truncate">{book.title}</h3>
-                        <p className="text-sm text-gray-500">by {book.author}</p>
+                        <p className="text-sm text-gray-500">
+                          by <AuthorName authorName={book.author} authorId={book.author_id} />
+                        </p>
                       </div>
                       {getStatusBadge(book)}
                     </div>

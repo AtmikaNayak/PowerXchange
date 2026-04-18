@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import AuthorName from "../components/AuthorName";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -295,7 +296,9 @@ export default function AdminDashboard() {
                 pendingAuthors.map((author) => (
                   <div key={author.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-800">{author.name}</p>
+                      <p className="font-medium text-gray-800">
+                        <AuthorName authorName={author.name} authorId={author.id} />
+                      </p>
                       <p className="text-sm text-gray-500">{author.genre || "No genre"}</p>
                     </div>
                     <Link

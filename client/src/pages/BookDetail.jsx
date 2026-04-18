@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Reviews from "../components/Reviews";
 import ReportModal from "../components/ReportModal";
+import AuthorName from "../components/AuthorName";
 import { Flag } from "lucide-react";
 
 const CONDITION_STYLES = {
@@ -196,7 +197,7 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
               </div>
               <h1 className="text-3xl font-bold leading-snug text-blue-950">{book.title}</h1>
               <p className="text-slate-400 mt-1 text-base">
-                by <span className="text-slate-600">{book.author}</span>
+                by <AuthorName authorName={book.author} authorId={book.author_id} className="text-slate-600" />
               </p>
             </div>
 

@@ -4,6 +4,7 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import { GENRES, getGenreImage } from "./HomePage";
 import Footer from "./Footer";
+import AuthorName from "../components/AuthorName";
 
 export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToCart, addToWishlist }) {
   const { name }  = useParams();
@@ -88,7 +89,9 @@ export default function GenrePage({ isLoggedIn, onLogout, cart, wishlist, addToC
                 </div>
                 <div className="p-4">
                   <p className="font-bold text-blue-950 text-base leading-snug mb-1">{book.title}</p>
-                  <p className="text-sm text-slate-400 mb-3">{book.author}</p>
+                  <p className="text-sm text-slate-400 mb-3">
+                    <AuthorName authorName={book.author} authorId={book.author_id} />
+                  </p>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-lg font-bold text-blue-700">₹{book.price}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${

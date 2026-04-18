@@ -127,14 +127,12 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
       return;
     }
 
-    // Only block if explicitly marked unavailable; treat null/undefined quantity as 1
+    // Block if explicitly marked unavailable
     if (book.is_available === false) {
-      alert("Sorry, this book is currently out of stock.");
+      alert("Sorry, this book is currently unavailable.");
       navigate("/home");
       return;
     }
-
-    const newQuantity = Math.max(0, (book.quantity ?? 1) - 1);
 
     // Validate seller_id - re-fetch from books table to ensure we have the latest data
     const { data: freshBookData } = await supabase
@@ -164,7 +162,7 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
 
     await supabase
       .from("books")
-      .update({ quantity: newQuantity })
+      .update({ is_available: false })
       .eq("id", book.id);
 
     try {

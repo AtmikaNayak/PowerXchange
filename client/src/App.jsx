@@ -26,6 +26,10 @@ import WishlistPage from "./pages/WishlistPage";
 import OrdersPage from "./pages/OrdersPage";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotificationsPage from "./pages/NotificationsPage";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FAQ from "./pages/FAQ";
+import Blog from "./pages/Blog";
 
 export default function App() {
   const [authState, setAuthState] = useState("loading");
@@ -82,8 +86,8 @@ export default function App() {
         .eq("id", uid)
         .single();
 
-      // If user is blocked, sign them out immediately
-      if (profile?.is_blocked) {
+      // If no profile exists, user was deleted by admin — force logout
+      if (!profile) {
         await supabase.auth.signOut();
         setAuthState("guest");
         userIdRef.current = null;
@@ -92,7 +96,17 @@ export default function App() {
         return;
       }
 
-      if (profile?.role === "admin") {
+      // If user is blocked, sign them out immediately
+      if (profile.is_blocked) {
+        await supabase.auth.signOut();
+        setAuthState("guest");
+        userIdRef.current = null;
+        setCart([]);
+        setWishlist([]);
+        return;
+      }
+
+      if (profile.role === "admin") {
         setAuthState("admin");
       } else {
         const { data: adminRole } = await supabase
@@ -231,6 +245,10 @@ export default function App() {
         <Route path="/admin/authors"     element={requireAdmin(<AdminAuthors   {...sharedProps} />)} />
         <Route path="/admin/transactions" element={requireAdmin(<AdminTransactions {...sharedProps} />)} />
         <Route path="/admin/reports"     element={requireAdmin(<AdminReports   {...sharedProps} />)} />
+        <Route path="/terms"          element={<TermsAndConditions {...sharedProps} />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy     {...sharedProps} />} />
+        <Route path="/faq"            element={<FAQ                {...sharedProps} />} />
+        <Route path="/blog"           element={<Blog               {...sharedProps} />} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -293,26 +293,18 @@ export default function BookDetail({ isLoggedIn, onLogout, cart, wishlist, addTo
                   {cart?.some(c => c.id === book.id) ? "✓ Added to Cart" : "Add to Cart"}
                 </button>
               )}
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => {
-                    if (typeof removeFromWishlist === 'function') removeFromWishlist(book.id);
-                    if (typeof addToWishlist === 'function') addToWishlist(book);
-                  }}
-                  className={`py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
-                    wishlist?.some(w => w.id === book.id)
-                      ? "border-rose-400 text-rose-500 bg-rose-50"
-                      : "border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-400"
-                  }`}>
-                  {wishlist?.some(w => w.id === book.id) ? "♥ Wishlisted" : "♡ Wishlist"}
-                </button>
-                <a
-                  href={`mailto:${book.seller_email}?subject=Interest in ${book.title}`}
-                  className="py-3.5 rounded-xl font-semibold text-base border border-slate-200 text-slate-600
-                    hover:border-blue-300 hover:text-blue-600 transition-all duration-200 text-center">
-                  💬 Contact Seller
-                </a>
-              </div>
+              <button
+                onClick={() => {
+                  if (typeof removeFromWishlist === 'function') removeFromWishlist(book.id);
+                  if (typeof addToWishlist === 'function') addToWishlist(book);
+                }}
+                className={`w-full py-3.5 rounded-xl font-semibold text-base border transition-all duration-200 ${
+                  wishlist?.some(w => w.id === book.id)
+                    ? "border-rose-400 text-rose-500 bg-rose-50"
+                    : "border-slate-200 text-slate-600 hover:border-rose-300 hover:text-rose-400"
+                }`}>
+                {wishlist?.some(w => w.id === book.id) ? "♥ Wishlisted" : "♡ Wishlist"}
+              </button>
               {!isOwnBook && !book.available && (
                 <button
                   onClick={() => setShowReportModal(true)}

@@ -25,10 +25,8 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
   useEffect(() => {
     loadData();
-    // Check if navigated from a notification with tab state
     if (location.state?.tab === "incoming") {
       setActiveTab("incoming");
-      // Clear the state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
     }
   }, []);
@@ -39,30 +37,22 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
     setUserId(user.id);
 
     try {
-      // Load purchases (as buyer) - use shorthand join syntax that works with Supabase
       const { data: buyerTx, error: buyerErr } = await supabase
         .from("transactions")
         .select("*, books(id, title, author, image_url, genre, condition, price), seller:seller_id(full_name, email, college)")
         .eq("buyer_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (buyerErr) {
-        console.error("Error loading purchases:", buyerErr);
-        // Tables should be set up now, so don't show the alert
-        // If there's still an error, it's likely a permissions issue
-      }
+      if (buyerErr) console.error("Error loading purchases:", buyerErr);
       setPurchases(buyerTx || []);
 
-      // Load incoming orders (as seller)
       const { data: sellerTx, error: sellerErr } = await supabase
         .from("transactions")
         .select("*, books(id, title, author, image_url, genre, condition, price), buyer:buyer_id(full_name, email, college)")
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (sellerErr) {
-        console.error("Error loading incoming orders:", sellerErr);
-      }
+      if (sellerErr) console.error("Error loading incoming orders:", sellerErr);
       setIncoming(sellerTx || []);
     } catch (err) {
       console.error("Unexpected error loading orders:", err);
@@ -74,7 +64,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
   const handleAccept = async (tx) => {
     setActionLoading(tx.id);
     try {
-      // Update transaction status
       const { error } = await supabase
         .from("transactions")
         .update({ status: "completed" })
@@ -82,21 +71,19 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       if (error) throw error;
 
-      // Send notification to buyer
+      // Notify buyer
       try {
-        const buyerId = tx.buyer_id;
         const bookTitle = tx.books?.title || "the book";
-        const sellerName = tx.seller?.full_name || tx.seller?.name || "The seller";
-
+        const sellerName = tx.seller?.full_name || "The seller";
         await supabase.from("notifications").insert({
-          user_id: buyerId,
+          user_id: tx.buyer_id,
           type: "request_accepted",
           title: "Your request has been accepted! 🎉",
           message: `${sellerName} has accepted your request for "${bookTitle}". View the bill and payment details in your orders.`,
           transaction_id: tx.id,
         });
       } catch (notifErr) {
-        console.error("Error sending notification:", notifErr);
+        console.error("Notification error (non-fatal):", notifErr);
       }
 
       setSuccessMsg("Order accepted successfully! The buyer has been notified.");
@@ -112,7 +99,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
     if (!window.confirm("Are you sure you want to decline this request?")) return;
     setActionLoading(tx.id);
     try {
-      // Update transaction status
       const { error } = await supabase
         .from("transactions")
         .update({ status: "cancelled" })
@@ -120,47 +106,27 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       if (error) throw error;
 
-      // Send notification to buyer
+      // Notify buyer
       try {
-        const buyerId = tx.buyer_id;
-        if (!buyerId) {
-          console.error("No buyer_id found for transaction", tx.id);
-        } else {
-          const bookTitle = tx.books?.title || "the book";
-          const sellerName = tx.seller?.full_name || tx.seller?.name || "The seller";
-
-          const { data: notifData, error: notifError } = await supabase
-            .from("notifications")
-            .insert({
-              user_id: buyerId,
-              type: "request_declined",
-              title: "Your request was declined",
-              message: `${sellerName} has declined your request for "${bookTitle}".`,
-              transaction_id: tx.id,
-            })
-            .select();
-
-          if (notifError) {
-            console.error("Notification insert error:", notifError);
-          } else {
-            console.log("Notification sent:", notifData);
-          }
-        }
+        const bookTitle = tx.books?.title || "the book";
+        const sellerName = tx.seller?.full_name || "The seller";
+        await supabase.from("notifications").insert({
+          user_id: tx.buyer_id,
+          type: "request_declined",
+          title: "Your request was declined",
+          message: `${sellerName} has declined your request for "${bookTitle}".`,
+          transaction_id: tx.id,
+        });
       } catch (notifErr) {
-        console.error("Error sending notification:", notifErr);
+        console.error("Notification error (non-fatal):", notifErr);
       }
 
       // Restore book quantity
       if (tx.books?.id) {
         const { data: book } = await supabase
-          .from("books")
-          .select("quantity")
-          .eq("id", tx.books.id)
-          .single();
-
+          .from("books").select("quantity").eq("id", tx.books.id).single();
         if (book) {
-          await supabase
-            .from("books")
+          await supabase.from("books")
             .update({ quantity: (book.quantity || 0) + 1, is_available: true })
             .eq("id", tx.books.id);
         }
@@ -179,7 +145,7 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
     setActionLoading(tx.id);
     try {
-      // Update transaction status
+      // Step 1: Cancel the transaction
       const { error } = await supabase
         .from("transactions")
         .update({ status: "cancelled" })
@@ -187,73 +153,57 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       if (error) throw error;
 
-      // Send notification to seller
-      const sellerId = tx.seller_id;
-      console.log("Cancel transaction:", tx);
-      console.log("Seller ID:", sellerId);
-
-      if (!sellerId) {
-        console.error("No seller_id found for transaction", tx.id);
-      } else {
+      // Step 2: Notify seller — silently log if it fails, never block the user
+      try {
         const bookTitle = tx.books?.title || "the book";
-        const buyerName = tx.buyer?.full_name || tx.buyer?.name || "The buyer";
+        // Get buyer name fresh from profiles (tx.buyer may be undefined in buyer's own view)
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: buyerProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+        const buyerName = buyerProfile?.full_name || "The buyer";
 
-        const { data: notifData, error: notifError } = await supabase
-          .from("notifications")
-          .insert({
-            user_id: sellerId,
-            type: "order_cancelled",
-            title: "Order was cancelled",
-            message: `${buyerName} has cancelled their order for "${bookTitle}".`,
-            transaction_id: tx.id,
-          })
-          .select();
-
-        if (notifError) {
-          console.error("Notification insert error:", notifError);
-          alert("Order cancelled but notification failed: " + notifError.message);
-        } else {
-          console.log("Notification sent successfully:", notifData);
-        }
+        await supabase.from("notifications").insert({
+          user_id: tx.seller_id,
+          type: "order_cancelled",
+          title: "Order was cancelled",
+          message: `${buyerName} has cancelled their order for "${bookTitle}".`,
+          transaction_id: tx.id,
+        });
+      } catch (notifErr) {
+        // Log silently — order is already cancelled, don't alarm the user
+        console.error("Notification error (non-fatal):", notifErr);
       }
 
-      // Restore book quantity
+      // Step 3: Restore book quantity
       if (tx.books?.id) {
         const { data: book } = await supabase
-          .from("books")
-          .select("quantity")
-          .eq("id", tx.books.id)
-          .single();
-
+          .from("books").select("quantity").eq("id", tx.books.id).single();
         if (book) {
-          await supabase
-            .from("books")
+          await supabase.from("books")
             .update({ quantity: (book.quantity || 0) + 1, is_available: true })
             .eq("id", tx.books.id);
         }
       }
 
-      setSuccessMsg("Order cancelled. The seller has been notified.");
+      setSuccessMsg("Order cancelled successfully.");
       setTimeout(() => setSuccessMsg(""), 3000);
       await loadData();
     } catch (err) {
-      console.error("Full cancel error:", err);
       alert("Error cancelling order: " + err.message);
     }
     setActionLoading(null);
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("en-IN", {
-      day: "numeric", month: "short", year: "numeric",
-    });
-  };
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString("en-IN", {
+    day: "numeric", month: "short", year: "numeric",
+  });
 
-  const formatTime = (dateStr) => {
-    return new Date(dateStr).toLocaleTimeString("en-IN", {
-      hour: "2-digit", minute: "2-digit",
-    });
-  };
+  const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString("en-IN", {
+    hour: "2-digit", minute: "2-digit",
+  });
 
   const StatusBadge = ({ status }) => {
     const s = STATUS_STYLES[status] || STATUS_STYLES.pending;
@@ -276,18 +226,13 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
     return (
       <div className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-200">
         <div className="flex gap-4">
-          {/* Book Cover */}
           <div
             className="w-28 h-40 rounded-xl overflow-hidden bg-blue-50 border border-blue-100 flex-shrink-0 cursor-pointer"
             onClick={() => book.id && navigate(`/books/${book.id}`)}
           >
             {book.image_url ? (
-              <img
-                src={book.image_url}
-                alt={book.title}
-                className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = "https://placehold.co/112x160?text=Book"; }}
-              />
+              <img src={book.image_url} alt={book.title} className="w-full h-full object-cover"
+                onError={(e) => { e.target.src = "https://placehold.co/112x160?text=Book"; }} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-blue-400 text-xs font-medium">
                 {book.genre || "📚"}
@@ -295,19 +240,15 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
             )}
           </div>
 
-          {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3 mb-1.5">
               <div className="min-w-0">
-                <h3 className="font-semibold text-gray-900 text-base truncate">
-                  {book.title || "Book"}
-                </h3>
+                <h3 className="font-semibold text-gray-900 text-base truncate">{book.title || "Book"}</h3>
                 <p className="text-sm text-gray-500 mt-0.5">{book.author || ""}</p>
               </div>
               <StatusBadge status={tx.status} />
             </div>
 
-            {/* Type badge */}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className={`text-xs px-2.5 py-1 rounded-md font-medium ${
                 isExchange ? "bg-teal-50 text-teal-700 border border-teal-200" : "bg-violet-50 text-violet-700 border border-violet-200"
@@ -319,7 +260,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
               </span>
             </div>
 
-            {/* Person info */}
             <div className="flex items-center gap-2 mt-3">
               <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0">
                 {personName[0]?.toUpperCase() || "U"}
@@ -332,7 +272,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
               </div>
             </div>
 
-            {/* Notes */}
             {tx.notes && (
               <div className="mt-3 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                 <p className="text-xs text-gray-500 font-medium mb-0.5">Message:</p>
@@ -340,52 +279,33 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
               </div>
             )}
 
-            {/* Price + Actions */}
             <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
               <span className="text-lg font-bold text-blue-700">₹{tx.price || 0}</span>
 
               <div className="flex items-center gap-2">
-                {/* Accept/Decline for seller on pending orders */}
                 {role === "seller" && tx.status === "pending" && (
                   <>
-                    <button
-                      onClick={() => handleAccept(tx)}
-                      disabled={actionLoading === tx.id}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
-                    >
-                      <CheckCircle size={14} />
-                      Accept
+                    <button onClick={() => handleAccept(tx)} disabled={actionLoading === tx.id}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                      <CheckCircle size={14} /> Accept
                     </button>
-                    <button
-                      onClick={() => handleDecline(tx)}
-                      disabled={actionLoading === tx.id}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
-                    >
-                      <XCircle size={14} />
-                      Decline
+                    <button onClick={() => handleDecline(tx)} disabled={actionLoading === tx.id}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200 transition disabled:opacity-50">
+                      <XCircle size={14} /> Decline
                     </button>
                   </>
                 )}
 
-                {/* Cancel for buyer on pending orders */}
                 {role === "buyer" && tx.status === "pending" && (
-                  <button
-                    onClick={() => handleCancel(tx)}
-                    disabled={actionLoading === tx.id}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
-                  >
-                    <XCircle size={14} />
-                    Cancel Order
+                  <button onClick={() => handleCancel(tx)} disabled={actionLoading === tx.id}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200 transition disabled:opacity-50">
+                    <XCircle size={14} /> Cancel Order
                   </button>
                 )}
 
-                {/* View Details */}
-                <button
-                  onClick={() => navigate(`/transaction/${tx.id}`)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 border border-blue-200 transition"
-                >
-                  <Eye size={14} />
-                  View Details
+                <button onClick={() => navigate(`/transaction/${tx.id}`)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 border border-blue-200 transition">
+                  <Eye size={14} /> View Details
                 </button>
               </div>
             </div>
@@ -411,7 +331,7 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
   const tabs = [
     { key: "purchases", label: "My Purchases", icon: ShoppingBag, count: purchases.length },
-    { key: "incoming",  label: "Incoming Orders",  icon: Package,     count: incoming.length },
+    { key: "incoming",  label: "Incoming Orders",  icon: Package,  count: incoming.length },
   ];
 
   const pendingIncoming = incoming.filter(t => t.status === "pending").length;
@@ -422,21 +342,17 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
             <p className="text-gray-500 mt-1">Track your purchases and incoming book requests</p>
           </div>
-          <button
-            onClick={() => navigate("/home")}
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-600 transition shadow-lg shadow-blue-200 text-sm"
-          >
+          <button onClick={() => navigate("/home")}
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-600 transition shadow-lg shadow-blue-200 text-sm">
             Browse Books
           </button>
         </div>
 
-        {/* Success Message */}
         {successMsg && (
           <div className="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
             <CheckCircle size={16} />
@@ -444,7 +360,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
           </div>
         )}
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <p className="text-2xl font-bold text-gray-900">{purchases.length}</p>
@@ -466,28 +381,22 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-6">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-5 py-3 text-sm border-b-2 transition-all ${
                   activeTab === tab.key
                     ? "border-blue-600 text-blue-700 font-semibold"
                     : "border-transparent text-gray-500 hover:text-gray-800"
-                }`}
-              >
+                }`}>
                 <Icon size={16} />
                 {tab.label}
                 {tab.count > 0 && (
                   <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === tab.key ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
-                  }`}>
-                    {tab.count}
-                  </span>
+                  }`}>{tab.count}</span>
                 )}
                 {tab.key === "incoming" && pendingIncoming > 0 && activeTab !== "incoming" && (
                   <span className="ml-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
@@ -497,7 +406,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
           })}
         </div>
 
-        {/* My Purchases Tab */}
         {activeTab === "purchases" && (
           <div className="space-y-4">
             {purchases.length === 0 ? (
@@ -505,10 +413,8 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
                 <div className="text-5xl mb-4">🛒</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No purchases yet</h3>
                 <p className="text-gray-500 text-sm mb-6">Start by browsing and requesting books you'd like to buy</p>
-                <button
-                  onClick={() => navigate("/home")}
-                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition"
-                >
+                <button onClick={() => navigate("/home")}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">
                   Browse Books
                 </button>
               </div>
@@ -518,7 +424,6 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
           </div>
         )}
 
-        {/* Incoming Orders Tab */}
         {activeTab === "incoming" && (
           <div className="space-y-4">
             {incoming.length === 0 ? (
@@ -526,10 +431,8 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
                 <div className="text-5xl mb-4">📬</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No incoming orders</h3>
                 <p className="text-gray-500 text-sm mb-6">When someone requests to buy your book, it will appear here</p>
-                <button
-                  onClick={() => navigate("/sellbook")}
-                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition"
-                >
+                <button onClick={() => navigate("/sellbook")}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">
                   List a Book
                 </button>
               </div>
@@ -543,4 +446,4 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
       <Footer />
     </div>
   );
-} 
+}

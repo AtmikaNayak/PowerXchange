@@ -4,124 +4,14 @@ import { supabase } from "../supabase";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
-export const AUTHORS = [
-  { id: "roald-dahl", name: "Roald Dahl",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Roald_Dahl_1954.jpg/240px-Roald_Dahl_1954.jpg",
-    genre: "Children's Fiction",
-    about: "Roald Dahl (1916–1990) was a British novelist born in Wales to Norwegian parents. Known for darkly comic tales with unexpected endings, his children's books — including Charlie and the Chocolate Factory and Matilda — remain beloved worldwide.",
-    books: [
-      { id: "b-rd-1", title: "Charlie & the Chocolate Factory", img: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg", price: 180 },
-      { id: "b-rd-2", title: "Matilda",           img: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg", price: 160 },
-      { id: "b-rd-3", title: "The BFG",            img: "https://covers.openlibrary.org/b/isbn/9780142410387-M.jpg", price: 150 },
-      { id: "b-rd-4", title: "James & the Giant Peach", img: "https://covers.openlibrary.org/b/isbn/9780142410363-M.jpg", price: 145 },
-    ],
-  },
-  { id: "jk-rowling", name: "J.K. Rowling",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/J._K._Rowling_2010.jpg/240px-J._K._Rowling_2010.jpg",
-    genre: "Fantasy",
-    about: "J.K. Rowling (born 1965) is a British author best known for the Harry Potter series, which has sold over 500 million copies. She wrote the first book while a single mother and it became one of the best-selling series in history.",
-    books: [
-      { id: "b-jk-1", title: "Harry Potter: Sorcerer's Stone",    img: "https://covers.openlibrary.org/b/isbn/9780439708180-L.jpg", price: 250 },
-      { id: "b-jk-2", title: "Harry Potter: Chamber of Secrets",  img: "https://covers.openlibrary.org/b/isbn/9780439064866-M.jpg", price: 250 },
-      { id: "b-jk-3", title: "Harry Potter: Prisoner of Azkaban", img: "https://covers.openlibrary.org/b/isbn/9780439136358-M.jpg", price: 260 },
-    ],
-  },
-  { id: "rick-riordan", name: "Rick Riordan",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Rick_Riordan_2014.jpg/240px-Rick_Riordan_2014.jpg",
-    genre: "Fantasy / Mythology",
-    about: "Rick Riordan (born 1964) is an American author and former teacher best known for Percy Jackson & the Olympians. He created Percy Jackson to help his son, diagnosed with ADHD and dyslexia. His books have sold over 30 million copies.",
-    books: [
-      { id: "b-rr-1", title: "Percy Jackson: The Lightning Thief", img: "https://covers.openlibrary.org/b/isbn/9780786838653-M.jpg", price: 220 },
-      { id: "b-rr-2", title: "Percy Jackson: Sea of Monsters",     img: "https://covers.openlibrary.org/b/isbn/9780786838652-M.jpg", price: 220 },
-    ],
-  },
-  { id: "sudha-murthy", name: "Sudha Murthy",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sudha_Murthy_at_JLF_2018_01.jpg/240px-Sudha_Murthy_at_JLF_2018_01.jpg",
-    genre: "Indian Fiction & Non-Fiction",
-    about: "Sudha Murthy (born 1950) is an Indian author, educator, and philanthropist. Chairperson of the Infosys Foundation, she has written over 30 books translated into all major Indian languages.",
-    books: [
-      { id: "b-sm-1", title: "Wise and Otherwise", img: "https://covers.openlibrary.org/b/id/8114491-M.jpg", price: 190 },
-      { id: "b-sm-2", title: "The Day I Stopped Drinking Milk", img: "https://covers.openlibrary.org/b/isbn/9780143419174-M.jpg", price: 175 },
-    ],
-  },
-  { id: "dan-brown", name: "Dan Brown",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Dan_Brown_2012.jpg/240px-Dan_Brown_2012.jpg",
-    genre: "Thriller",
-    about: "Dan Brown (born 1964) is an American thriller author. The Da Vinci Code has sold over 80 million copies, making it one of the best-selling books of all time. His plots weave codes and conspiracy theories around real institutions.",
-    books: [
-      { id: "b-db-1", title: "The Da Vinci Code", img: "https://covers.openlibrary.org/b/isbn/9780307474278-M.jpg", price: 230 },
-      { id: "b-db-2", title: "Angels & Demons",   img: "https://covers.openlibrary.org/b/isbn/9781416524793-M.jpg", price: 220 },
-      { id: "b-db-3", title: "Inferno",            img: "https://covers.openlibrary.org/b/isbn/9780385537858-M.jpg", price: 210 },
-    ],
-  },
-  { id: "jeff-kinney", name: "Jeff Kinney",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Jeff_Kinney_2014.jpg/240px-Jeff_Kinney_2014.jpg",
-    genre: "Children's / Humor",
-    about: "Jeff Kinney (born 1979) is an American author and cartoonist best known for Diary of a Wimpy Kid. The series has sold over 250 million copies worldwide in 65 languages.",
-    books: [
-      { id: "b-jki-1", title: "Diary of a Wimpy Kid", img: "https://covers.openlibrary.org/b/isbn/9780810993136-M.jpg", price: 200 },
-      { id: "b-jki-2", title: "Rodrick Rules",         img: "https://covers.openlibrary.org/b/isbn/9780810994737-M.jpg", price: 200 },
-    ],
-  },
-  { id: "enid-blyton", name: "Enid Blyton",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Enid_blyton.jpg/240px-Enid_blyton.jpg",
-    genre: "Children's Fiction",
-    about: "Enid Blyton (1897–1968) wrote over 700 children's books including the Famous Five and Secret Seven series. Her books have been translated into over 90 languages and continue to sell millions of copies each year.",
-    books: [
-      { id: "b-eb-1", title: "Famous Five: Five on a Treasure Island", img: "https://covers.openlibrary.org/b/isbn/9780340796177-M.jpg", price: 140 },
-      { id: "b-eb-2", title: "The Magic Faraway Tree", img: "https://covers.openlibrary.org/b/isbn/9780603560934-M.jpg", price: 130 },
-    ],
-  },
-  { id: "james-patterson", name: "James Patterson",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/James_Patterson_2010.jpg/240px-James_Patterson_2010.jpg",
-    genre: "Thriller",
-    about: "James Patterson (born 1947) has sold over 380 million copies of his books worldwide. Best known for the Alex Cross series, he has written over 200 novels — most of them bestsellers.",
-    books: [
-      { id: "b-jp-1", title: "Along Came a Spider", img: "https://covers.openlibrary.org/b/isbn/9780446364904-M.jpg", price: 210 },
-      { id: "b-jp-2", title: "Kiss the Girls",      img: "https://covers.openlibrary.org/b/isbn/9780446602242-M.jpg", price: 200 },
-    ],
-  },
-];
+export const AUTHORS = []; // loaded from DB
 
-export const BOOKS = [
-  { id: "1", title: "Introduction to Algorithms", author: "Thomas H. Cormen", price: 299, listingType: "rent", condition: "good", genre: "Science", description: "A comprehensive introduction to modern algorithms covering sorting, searching, graph algorithms and dynamic programming. Some pencil markings on pages 40–60, otherwise great shape.", imageUrl: "https://covers.openlibrary.org/b/id/8739161-L.jpg", available: true, rentedTillNow: 6, avgReadingTime: "3 weeks", avgRentingTime: "4 weeks", authorId: null, seller: { name: "Arjun Sharma", college: "NIT Surathkal", rating: 4.5, totalRatings: 12 }, relatedBooks: [{ id: "2", title: "Clean Code", author: "Robert C. Martin", price: 199, imageUrl: "https://covers.openlibrary.org/b/id/8432472-L.jpg" }], feedback: [{ id: 1, user: "Sneha R.", college: "PESIT Bangalore", rating: 5, comment: "Excellent condition, very responsive seller.", date: "Jan 2025" }, { id: 2, user: "Karthik M.", college: "NITK Surathkal", rating: 4, comment: "Good condition as described. Overall great experience.", date: "Dec 2024" }] },
-  { id: "2", title: "Clean Code", author: "Robert C. Martin", price: 199, listingType: "sell", condition: "new", genre: "Science", description: "Like new condition. Only read once. A handbook of agile software craftsmanship — perfect for learning maintainable, readable code.", imageUrl: "https://covers.openlibrary.org/b/id/8432472-L.jpg", available: true, rentedTillNow: 3, avgReadingTime: "2 weeks", avgRentingTime: "3 weeks", authorId: null, seller: { name: "Priya Nair", college: "RVCE Bangalore", rating: 5.0, totalRatings: 8 }, relatedBooks: [{ id: "1", title: "Introduction to Algorithms", author: "Thomas H. Cormen", price: 299, imageUrl: "https://covers.openlibrary.org/b/id/8739161-L.jpg" }], feedback: [{ id: 1, user: "Rahul V.", college: "BMS College", rating: 5, comment: "Absolutely like new. Seller very professional.", date: "Feb 2025" }] },
-  { id: "b-rd-1", title: "Charlie & the Chocolate Factory", author: "Roald Dahl", price: 180, listingType: "sell", condition: "good", genre: "Kids", description: "Classic Roald Dahl in good condition with minor cover wear. Charlie Bucket's golden ticket adventure into Willy Wonka's magical chocolate factory.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg", available: true, rentedTillNow: 8, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "roald-dahl", seller: { name: "Meera Rao", college: "Christ University Bangalore", rating: 4.8, totalRatings: 15 }, relatedBooks: [{ id: "b-rd-2", title: "Matilda", author: "Roald Dahl", price: 160, imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg" }], feedback: [{ id: 1, user: "Aditya K.", college: "BMS College", rating: 5, comment: "Great copy, fast delivery!", date: "Mar 2025" }] },
-  { id: "b-rd-2", title: "Matilda", author: "Roald Dahl", price: 160, listingType: "rent", condition: "good", genre: "Kids", description: "Roald Dahl's beloved story of a gifted girl with telekinetic powers. Good condition with minor spine crease.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410370-M.jpg", available: true, rentedTillNow: 10, avgReadingTime: "5 days", avgRentingTime: "2 weeks", authorId: "roald-dahl", seller: { name: "Nandini S.", college: "PES University", rating: 4.6, totalRatings: 9 }, relatedBooks: [{ id: "b-rd-1", title: "Charlie & the Chocolate Factory", author: "Roald Dahl", price: 180, imageUrl: "https://covers.openlibrary.org/b/isbn/9780142410318-M.jpg" }], feedback: [{ id: 1, user: "Pooja M.", college: "RVCE", rating: 5, comment: "Perfect condition. My childhood favourite!", date: "Feb 2025" }] },
-  { id: "b-jk-1", title: "Harry Potter: Sorcerer's Stone", author: "J.K. Rowling", price: 250, listingType: "sell", condition: "new", genre: "Fiction", description: "Brand-new copy of the first Harry Potter novel. Harry discovers his magical heritage and begins his journey at Hogwarts.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780439708180-L.jpg", available: true, rentedTillNow: 4, avgReadingTime: "1.5 weeks", avgRentingTime: "3 weeks", authorId: "jk-rowling", seller: { name: "Rohit B.", college: "NITK Surathkal", rating: 4.9, totalRatings: 20 }, relatedBooks: [{ id: "b-jk-2", title: "Chamber of Secrets", author: "J.K. Rowling", price: 250, imageUrl: "https://covers.openlibrary.org/b/isbn/9780439064866-M.jpg" }], feedback: [{ id: 1, user: "Asha T.", college: "MIT Manipal", rating: 5, comment: "Brand new. Delivered quickly!", date: "Jan 2025" }] },
-  { id: "b-rr-1", title: "Percy Jackson: The Lightning Thief", author: "Rick Riordan", price: 220, listingType: "rent", condition: "good", genre: "Fiction", description: "Percy Jackson discovers he is the son of a Greek god and must prevent a war among the Olympians. Good condition, minor spine crease.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780786838653-M.jpg", available: true, rentedTillNow: 7, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "rick-riordan", seller: { name: "Suraj K.", college: "Manipal Institute of Technology", rating: 4.7, totalRatings: 11 }, relatedBooks: [{ id: "b-rr-2", title: "Sea of Monsters", author: "Rick Riordan", price: 220, imageUrl: "https://covers.openlibrary.org/b/isbn/9780786838652-M.jpg" }], feedback: [{ id: 1, user: "Tanvi M.", college: "SJCE Mysuru", rating: 5, comment: "Great read. Book arrived in perfect condition.", date: "Mar 2025" }] },
-  { id: "b-db-1", title: "The Da Vinci Code", author: "Dan Brown", price: 230, listingType: "sell", condition: "good", genre: "Fiction", description: "Dan Brown's bestselling thriller. Robert Langdon investigates a murder in the Louvre that leads to a shocking conspiracy. Good condition.", imageUrl: "https://covers.openlibrary.org/b/isbn/9780307474278-M.jpg", available: true, rentedTillNow: 5, avgReadingTime: "10 days", avgRentingTime: "3 weeks", authorId: "dan-brown", seller: { name: "Ananya P.", college: "PESIT Bangalore", rating: 4.8, totalRatings: 14 }, relatedBooks: [{ id: "b-db-2", title: "Angels & Demons", author: "Dan Brown", price: 220, imageUrl: "https://covers.openlibrary.org/b/isbn/9781416524793-M.jpg" }], feedback: [{ id: 1, user: "Rahul S.", college: "BMSCE", rating: 4, comment: "Good condition, great thriller!", date: "Jan 2025" }] },
-  { id: "b-sm-1", title: "Wise and Otherwise", author: "Sudha Murthy", price: 190, listingType: "sell", condition: "new", genre: "Biography", description: "A collection of 51 real-life stories from Sudha Murthy's experiences travelling across India. New condition, unread.", imageUrl: "https://covers.openlibrary.org/b/id/8114491-M.jpg", available: true, rentedTillNow: 2, avgReadingTime: "1 week", avgRentingTime: "2 weeks", authorId: "sudha-murthy", seller: { name: "Kavya R.", college: "RVCE Bangalore", rating: 4.9, totalRatings: 7 }, relatedBooks: [], feedback: [{ id: 1, user: "Deepa N.", college: "Christ University", rating: 5, comment: "Beautifully written. New copy as described.", date: "Feb 2025" }] },
-];
+export const BOOKS = []; // loaded from DB
 
 // Helper function to generate avatar URL with genre initials
 export function getGenreImage(genreName, size = 200) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(genreName)}&size=${size}&background=dbeafe&color=1d4ed8&bold=true`;
 }
-
-// Hardcoded fallback genres with initials-based images
-export const GENRES = [
-  { name: "Biography",    img: getGenreImage("Biography") },
-  { name: "Arts & Crafts",img: getGenreImage("Arts & Crafts") },
-  { name: "Business",     img: getGenreImage("Business") },
-  { name: "Comics",       img: getGenreImage("Comics") },
-  { name: "Cookery",      img: getGenreImage("Cookery") },
-  { name: "History",      img: getGenreImage("History") },
-  { name: "Kids",         img: getGenreImage("Kids") },
-  { name: "Science",      img: getGenreImage("Science") },
-  { name: "Sports",       img: getGenreImage("Sports") },
-  { name: "Travel",       img: getGenreImage("Travel") },
-  { name: "Fiction",      img: getGenreImage("Fiction") },
-  { name: "Self Help",    img: getGenreImage("Self Help") },
-];
-
-const kidsBooks = [
-  { id: "k-1", title: "Goodnight Moon",            img: "https://covers.openlibrary.org/b/isbn/9780064430173-M.jpg" },
-  { id: "k-2", title: "Where the Wild Things Are", img: "https://covers.openlibrary.org/b/isbn/9780064431781-M.jpg" },
-  { id: "k-3", title: "Green Eggs and Ham",        img: "https://covers.openlibrary.org/b/isbn/9780394800165-M.jpg" },
-  { id: "k-4", title: "Charlotte's Web",           img: "https://covers.openlibrary.org/b/isbn/9780064400558-M.jpg" },
-  { id: "k-5", title: "James & the Giant Peach",   img: "https://covers.openlibrary.org/b/isbn/9780142410363-M.jpg" },
-];
 
 const conditionData = [
   { title: "Brand New",      img: "https://images.unsplash.com/photo-1589998059171-988d887df646?w=400&h=220&fit=crop" },
@@ -226,10 +116,12 @@ function Hero({ onBrowse }) {
 function GenreStrip({ onGenreClick, sectionRef }) {
   const ref = useRef(null);
   const [dbGenres, setDbGenres] = useState([]);
+  const [genresLoading, setGenresLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(Date.now());
 
   useEffect(() => {
     const fetchGenres = async () => {
+      setGenresLoading(true);
       const { supabase } = await import("../supabase");
 
       console.log("HomePage: Fetching genres...");
@@ -247,6 +139,7 @@ function GenreStrip({ onGenreClick, sectionRef }) {
           name: g.name,
           img: getGenreImage(g.name, 80)
         })));
+        setGenresLoading(false);
         return;
       }
 
@@ -274,6 +167,7 @@ function GenreStrip({ onGenreClick, sectionRef }) {
           img: getGenreImage(g, 80)
         })));
       }
+      setGenresLoading(false);
     };
 
     fetchGenres();
@@ -304,15 +198,22 @@ function GenreStrip({ onGenreClick, sectionRef }) {
     };
   }, []);
 
-  // Combine db genres with hardcoded fallbacks (db genres take priority)
-  const genresToShow = dbGenres.length > 0 ? dbGenres : GENRES;
+  // Only show real genres from DB — no dummy fallback
+  const genresToShow = dbGenres;
 
   return (
     <div ref={sectionRef} className="px-7 mt-10">
       <h2 className="text-center font-serif font-bold text-2xl text-blue-950 mb-6">Browse by Genre</h2>
       <div className="relative">
         <div ref={ref} className="flex gap-5 overflow-x-auto scrollbar-hide px-2 py-1">
-          {genresToShow.map((g) => (
+          {genresLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center min-w-[96px] animate-pulse">
+                <div className="w-20 h-20 rounded-2xl bg-blue-100" />
+                <div className="mt-2 h-3 w-16 bg-blue-100 rounded" />
+              </div>
+            ))
+          ) : genresToShow.map((g) => (
             <div key={g.name} onClick={() => onGenreClick && onGenreClick(g.name)}
               className="flex flex-col items-center min-w-[96px] cursor-pointer group">
               <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-100 bg-blue-50
@@ -475,67 +376,58 @@ function SearchResults({ query, onBookClick, booksToUse }) {
 function BookGridSlider({ title, data, onBookClick }) {
   const ref = useRef(null);
   const autoScrollRef = useRef(null);
+  const pausedRef = useRef(false);
+  const resumeTimerRef = useRef(null);
 
-  // Pause auto-scroll on user interaction
-  const pauseAutoScroll = () => {
-    if (autoScrollRef.current) {
-      clearInterval(autoScrollRef.current);
-      autoScrollRef.current = null;
-    }
-  };
-
-  // Infinite circular auto-scroll for trending books
-  useEffect(() => {
+  const startAutoScroll = () => {
+    if (autoScrollRef.current) clearInterval(autoScrollRef.current);
     autoScrollRef.current = setInterval(() => {
-      if (ref.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = ref.current;
-        const maxScroll = scrollWidth - clientWidth;
-
-        // When near the end, seamlessly jump to start without reversing
-        if (scrollLeft >= maxScroll - 10) {
-          // Disable smooth scrolling for instant seamless loop
-          ref.current.style.scrollBehavior = 'auto';
-          ref.current.scrollTo({ left: 0 });
-          // Re-enable smooth scrolling after a brief delay
-          setTimeout(() => {
-            ref.current.style.scrollBehavior = 'smooth';
-          }, 50);
-        } else {
-          // Continuous forward scroll
-          ref.current.scrollBy({ left: 1, behavior: 'auto' });
-        }
+      if (!ref.current || pausedRef.current) return;
+      const { scrollLeft, scrollWidth, clientWidth } = ref.current;
+      const maxScroll = scrollWidth - clientWidth;
+      // Only auto-scroll if content is actually wider than the container
+      if (maxScroll <= 0) return;
+      if (scrollLeft >= maxScroll - 2) {
+        ref.current.scrollTo({ left: 0 });
+      } else {
+        ref.current.scrollLeft += 1;
       }
     }, 30);
+  };
 
+  // Start auto-scroll only after data is loaded (data.length in deps)
+  useEffect(() => {
+    if (data.length === 0) return;
+    // Small delay so DOM has painted the cards before we measure scrollWidth
+    const t = setTimeout(startAutoScroll, 300);
     return () => {
-      if (autoScrollRef.current) {
-        clearInterval(autoScrollRef.current);
-      }
+      clearTimeout(t);
+      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
     };
-  }, []);
+  }, [data.length]);
+
+  const pauseTemporarily = () => {
+    pausedRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, 3000); // resume auto-scroll 3s after last interaction
+  };
 
   const handleScrollLeft = () => {
-    pauseAutoScroll();
-    if (ref.current) {
-      ref.current.scrollBy({ left: -220, behavior: 'smooth' });
-    }
+    pauseTemporarily();
+    ref.current?.scrollBy({ left: -220, behavior: 'smooth' });
   };
 
   const handleScrollRight = () => {
-    pauseAutoScroll();
-    if (ref.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = ref.current;
-      const maxScroll = scrollWidth - clientWidth;
-      if (scrollLeft >= maxScroll - 10) {
-        // At end, loop to start
-        ref.current.style.scrollBehavior = 'auto';
-        ref.current.scrollTo({ left: 0 });
-        setTimeout(() => {
-          ref.current.style.scrollBehavior = 'smooth';
-        }, 50);
-      } else {
-        ref.current.scrollBy({ left: 220, behavior: 'smooth' });
-      }
+    pauseTemporarily();
+    if (!ref.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = ref.current;
+    const maxScroll = scrollWidth - clientWidth;
+    if (scrollLeft >= maxScroll - 2) {
+      ref.current.scrollTo({ left: 0 });
+    } else {
+      ref.current.scrollBy({ left: 220, behavior: 'smooth' });
     }
   };
 
@@ -548,15 +440,19 @@ function BookGridSlider({ title, data, onBookClick }) {
         ref={ref}
         className="flex gap-4 overflow-x-auto scrollbar-hide pb-1"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        onMouseEnter={() => { pausedRef.current = true; }}
+        onMouseLeave={() => { pausedRef.current = false; }}
       >
         {data.map((book) => (
           <div key={book.id} onClick={() => onBookClick && onBookClick(book.id)}
             className="min-w-[220px] max-w-[220px] flex-shrink-0 bg-white rounded-xl border border-blue-100
               shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer">
-            <div className="h-72 overflow-hidden bg-blue-50">
+            <div className="relative h-72 overflow-hidden bg-blue-50">
               <img src={book.img} alt={book.title}
                 className="w-full h-full object-cover"
                 onError={(e) => { e.target.src = "https://placehold.co/220x288?text=Book"; }} />
+              <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white
+                text-[10px] font-bold px-2 py-0.5 rounded-full shadow">🔥 Trending</span>
             </div>
             <div className="p-3">
               <p className="font-semibold text-blue-950 text-base leading-snug mb-1 line-clamp-2">{book.title}</p>
@@ -635,11 +531,11 @@ function ConditionSlider({ title, data, onConditionClick }) {
 function AuthorSlider({ onAuthorClick }) {
   const ref = useRef(null);
   const [dbAuthors, setDbAuthors] = useState([]);
+  const [authorsLoading, setAuthorsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAuthors = async () => {
       const { supabase } = await import("../supabase");
-      // Fetch ALL authors (not just approved) so new authors appear immediately
       const { data, error } = await supabase
         .from("authors")
         .select("*")
@@ -648,17 +544,25 @@ function AuthorSlider({ onAuthorClick }) {
       if (!error && data) {
         setDbAuthors(data);
       }
+      setAuthorsLoading(false);
     };
 
     fetchAuthors();
   }, []);
 
-  const authorsToShow = dbAuthors.length > 0 ? dbAuthors : AUTHORS;
-
   return (
     <div className="px-7 mt-6 relative">
       <div ref={ref} className="flex gap-8 overflow-x-auto scrollbar-hide py-2">
-        {authorsToShow.map((a) => (
+        {authorsLoading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center min-w-[120px] animate-pulse">
+              <div className="w-28 h-28 rounded-full bg-blue-100" />
+              <div className="mt-3 h-3 w-20 bg-blue-100 rounded" />
+            </div>
+          ))
+        ) : dbAuthors.length === 0 ? (
+          <p className="text-gray-400 text-sm py-4 px-2">No authors yet</p>
+        ) : dbAuthors.map((a) => (
           <div key={a.id} onClick={() => onAuthorClick(a.id)}
             className="flex flex-col items-center min-w-[120px] cursor-pointer group">
             <img src={a.photo_url || a.img} alt={a.name}
@@ -683,7 +587,9 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
   const [dbBooks, setDbBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newArrivalsQueue, setNewArrivalsQueue] = useState([]);
+  const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
   const [trendingBooks, setTrendingBooks] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
 
   const params      = new URLSearchParams(location.search);
   const searchQuery = params.get("q") || "";
@@ -726,6 +632,7 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
         }));
         setNewArrivalsQueue(queue);
       }
+      setNewArrivalsLoading(false);
     };
 
     fetchNewArrivals();
@@ -736,70 +643,75 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
     const fetchTrendingBooks = async () => {
       const { supabase } = await import("../supabase");
 
-      // First, try to get books with statistics (trending score)
+      // Try to get books joined via book_statistics
       const { data: statsData, error: statsError } = await supabase
         .from("book_statistics")
         .select(`
+          book_id,
           trending_score,
-          books (
-            id,
-            title,
-            author,
-            price,
-            image_url,
-            cover_url,
-            is_approved,
-            is_available,
-            quantity
-          )
+          views_count,
+          sales_count
         `)
         .order("trending_score", { ascending: false })
-        .limit(30); // fetch more, filter client-side
+        .limit(30);
 
       if (!statsError && statsData && statsData.length > 0) {
-        // Filter to only in-stock books
-        const trending = statsData
-          .filter(s => s.books && s.books.quantity > 0)
-          .slice(0, 10)
-          .map(s => ({
-            id: s.books.id,
-            title: s.books.title,
-            author: s.books.author || "Unknown",
-            price: s.books.price || 0,
-            img: s.books.image_url || s.books.cover_url || "https://placehold.co/200x160?text=Book",
-            trendingScore: s.trending_score
-          }));
+        // Fetch the actual book details for these IDs
+        const bookIds = statsData.map(s => s.book_id);
+        const { data: booksData, error: booksError } = await supabase
+          .from("books")
+          .select("id, title, author, price, image_url, cover_url, quantity, is_available")
+          .in("id", bookIds);
 
-        if (trending.length > 0) {
-          setTrendingBooks(trending);
-          return;
+        if (!booksError && booksData && booksData.length > 0) {
+          // Merge stats with book data, filter out unavailable/out-of-stock
+          const bookMap = Object.fromEntries(booksData.map(b => [b.id, b]));
+          const trending = statsData
+            .map(s => ({ ...s, book: bookMap[s.book_id] }))
+            .filter(s => s.book && s.book.is_available !== false && (s.book.quantity == null || s.book.quantity > 0))
+            .slice(0, 10)
+            .map(s => ({
+              id: s.book.id,
+              title: s.book.title,
+              author: s.book.author || "Unknown",
+              price: s.book.price || 0,
+              img: s.book.image_url || s.book.cover_url || "https://placehold.co/220x288?text=Book",
+              trendingScore: s.trending_score
+            }));
+
+          if (trending.length > 0) {
+            setTrendingBooks(trending);
+            setTrendingLoading(false);
+            return;
+          }
         }
       }
 
-      // No statistics data - fallback to recently added books
+      // Fallback: most recently added available books
       const { data: fallbackData, error: fallbackError } = await supabase
         .from("books")
         .select("id, title, author, price, image_url, cover_url")
+        .neq("is_available", false)
         .order("created_at", { ascending: false })
         .limit(10);
 
       if (!fallbackError && fallbackData) {
-        const fallback = fallbackData.map(b => ({
+        setTrendingBooks(fallbackData.map(b => ({
           id: b.id,
           title: b.title,
           author: b.author || "Unknown",
           price: b.price || 0,
-          img: b.image_url || b.cover_url || "https://placehold.co/200x160?text=Book"
-        }));
-        setTrendingBooks(fallback);
+          img: b.image_url || b.cover_url || "https://placehold.co/220x288?text=Book"
+        })));
       }
+      setTrendingLoading(false);
     };
 
     fetchTrendingBooks();
   }, []);
 
-  // Use database books if available, otherwise fallback to hardcoded
-  const booksToUse = dbBooks.length > 0 ? dbBooks.map(b => ({
+  // Use database books if available
+  const booksToUse = dbBooks.map(b => ({
     id: b.id,
     title: b.title,
     author: b.author || "Unknown",
@@ -811,7 +723,7 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
     imageUrl: b.image_url || b.cover_url || "https://placehold.co/200x160?text=Book",
     available: b.is_available !== false,
     seller: { name: b.seller_name || "Unknown", college: "N/A" },
-  })) : BOOKS;
+  }));
 
   // trending is now fetched from database based on sales, views, ratings
   // falls back to recently added books if no statistics exist
@@ -863,14 +775,40 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
             <AuthorSlider onAuthorClick={(id) => navigate(`/author/${id}`)} />
           ) : (
             <>
-              {loading ? (
-                <div className="text-center py-20 text-gray-500">Loading books...</div>
-              ) : (
-                <>
-                  <BookGridSlider  title="Trending Now"               data={trendingBooks}   onBookClick={(id) => navigate(`/books/${id}`)} />
-                  <BookRowSlider   title="New Arrivals"               data={newArrivalsQueue} onBookClick={(id) => navigate(`/books/${id}`)} />
-                  <ConditionSlider title="Choose Your Book Condition" data={conditionData}   onConditionClick={(cond) => navigate(`/condition/${encodeURIComponent(cond)}`)} />
-                </>
+              {/* Trending Now */}
+              {trendingLoading ? (
+                <div className="px-7 mt-8">
+                  <div className="h-6 w-40 bg-blue-100 rounded animate-pulse mb-4" />
+                  <div className="flex gap-4 overflow-hidden">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="min-w-[220px] h-[340px] bg-blue-100 rounded-xl animate-pulse flex-shrink-0" />
+                    ))}
+                  </div>
+                </div>
+              ) : trendingBooks.length > 0 ? (
+                <BookGridSlider title="Trending Now" data={trendingBooks} onBookClick={(id) => navigate(`/books/${id}`)} />
+              ) : null}
+
+              {/* New Arrivals */}
+              {newArrivalsLoading ? (
+                <div className="px-7 mt-8">
+                  <div className="h-6 w-40 bg-blue-100 rounded animate-pulse mb-4" />
+                  <div className="flex gap-4 overflow-hidden">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="min-w-[280px] h-[144px] bg-blue-100 rounded-xl animate-pulse flex-shrink-0" />
+                    ))}
+                  </div>
+                </div>
+              ) : newArrivalsQueue.length > 0 ? (
+                <BookRowSlider title="New Arrivals" data={newArrivalsQueue} onBookClick={(id) => navigate(`/books/${id}`)} />
+              ) : null}
+
+              {/* Condition Slider — always shown */}
+              <ConditionSlider title="Choose Your Book Condition" data={conditionData} onConditionClick={(cond) => navigate(`/condition/${encodeURIComponent(cond)}`)} />
+
+              {/* Show a friendly message if DB is still loading the main books */}
+              {loading && (
+                <div className="text-center py-10 text-gray-400 text-sm">Loading more books…</div>
               )}
             </>
           )}

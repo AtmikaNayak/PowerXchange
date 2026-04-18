@@ -46,8 +46,15 @@ function Signup() {
     setLoading(true);
     setError("");
 
-    if (!name || !email || !college || !password) {
+    if (!name || !email || !college || !phone || !password) {
       setError("Please fill in all required fields");
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone — must be exactly 10 digits
+    if (!/^\d{10}$/.test(phone.trim())) {
+      setError("Please enter a valid 10-digit phone number");
       setLoading(false);
       return;
     }
@@ -61,7 +68,6 @@ function Signup() {
 
     try {
       // ── Step 1: Create the auth user ─────────────────────────────────────
-      // The handle_new_user trigger will auto-create a profiles row immediately.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -86,30 +92,28 @@ function Signup() {
 
       const uid = authData.user.id;
 
-      // ── Step 2: Upload images (authenticated now) ─────────────────────────
+      // ── Step 2: Upload images ─────────────────────────────────────────────
       let photoUrl  = null;
       let idCardUrl = null;
-      const photoFile  = photoInputRef.current?.files?.[0];
-      const idCardFile = idCardInputRef.current?.files?.[0];
+      const photoFile   = photoInputRef.current?.files?.[0];
+      const idCardFile2 = idCardInputRef.current?.files?.[0];
 
-      if (photoFile || idCardFile) {
+      if (photoFile || idCardFile2) {
         setUploadingImages(true);
         try {
-          if (photoFile)  photoUrl  = await uploadImage(photoFile,  "person_photos");
-          if (idCardFile) idCardUrl = await uploadImage(idCardFile, "id_cards");
+          if (photoFile)   photoUrl  = await uploadImage(photoFile,   "person_photos");
+          if (idCardFile2) idCardUrl = await uploadImage(idCardFile2, "id_cards");
         } catch (uploadErr) {
-          // Non-fatal — continue without the photo
           console.warn("Image upload failed:", uploadErr.message);
         }
         setUploadingImages(false);
       }
 
       // ── Step 3: Update the profile row the trigger already created ────────
-      // Wait briefly for the DB trigger to create the profiles row first.
       await new Promise((r) => setTimeout(r, 1000));
 
       const profilePayload = {
-        full_name: name,   // profiles table uses full_name, not name
+        full_name: name,
         email,
         college,
         phone,
@@ -120,7 +124,6 @@ function Signup() {
         ...(idCardUrl && { id_card_url: idCardUrl }),
       };
 
-      // Try UPDATE first (row should exist from trigger)
       const { error: profileError, count } = await supabase
         .from("profiles")
         .update(profilePayload)
@@ -128,7 +131,6 @@ function Signup() {
         .select();
 
       if (profileError || !count) {
-        // Trigger row not yet created — use upsert as safe fallback
         const { error: upsertError } = await supabase
           .from("profiles")
           .upsert(
@@ -140,7 +142,6 @@ function Signup() {
         }
       }
 
-      // Redirect to login after successful signup
       alert("Account created successfully! Please login.");
       navigate("/login");
     } catch (err) {
@@ -149,7 +150,6 @@ function Signup() {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -170,31 +170,32 @@ function Signup() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Full Name</label>
+              <label className="text-sm font-medium text-gray-700">Full Name <span className="text-red-500">*</span></label>
               <input type="text" placeholder="Enter your full name" value={name}
                 onChange={(e) => setName(e.target.value)} required
                 className="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">College Email</label>
+              <label className="text-sm font-medium text-gray-700">College Email <span className="text-red-500">*</span></label>
               <input type="email" placeholder="yourname@college.edu" value={email}
                 onChange={(e) => setEmail(e.target.value)} required
                 className="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">College Name</label>
+              <label className="text-sm font-medium text-gray-700">College Name <span className="text-red-500">*</span></label>
               <input type="text" placeholder="Enter your college name" value={college}
                 onChange={(e) => setCollege(e.target.value)} required
                 className="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Phone Number <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input type="tel" placeholder="Your phone number" value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+              <label className="text-sm font-medium text-gray-700">Phone Number <span className="text-red-500">*</span></label>
+              <input type="tel" placeholder="10-digit phone number" value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} required maxLength={10}
                 className="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+              <p className="text-xs text-gray-400 mt-1">Required for order communication</p>
             </div>
 
             <div>
@@ -205,7 +206,7 @@ function Signup() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Password</label>
+              <label className="text-sm font-medium text-gray-700">Password <span className="text-red-500">*</span></label>
               <div className="relative mt-1">
                 <input type={showPassword ? "text" : "password"} placeholder="Create a password"
                   value={password} onChange={(e) => setPassword(e.target.value)} required

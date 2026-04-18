@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
-import { GENRES, getGenreImage } from "./HomePage";
+import { getGenreImage } from "./HomePage";
 import Footer from "./Footer";
 import AuthorName from "../components/AuthorName";
 

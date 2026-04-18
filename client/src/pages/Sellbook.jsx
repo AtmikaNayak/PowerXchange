@@ -35,9 +35,7 @@ export default function SellBook({ isLoggedIn, onLogout, cart, wishlist }) {
   const [form, setForm] = useState({
 title: "", author: "", genre: "", condition: "",
     price: "", description: "", name: "", phone: "",
-    email: "", address: "", city: "", pincode: "",
-    quantity: "1",
-  });
+    email: "", address: "", city: "", pincode: "" });
 
   const [userProfile, setUserProfile] = useState(null);
 
@@ -138,7 +136,7 @@ setShowDropdown(false);
     setSelectedAuthor(null);
     setAuthorQuery("");
     setGenreInput("");
-    setForm({ title: "", author: "", genre: "", condition: "", price: "", description: "", name: "", phone: "", email: "", address: "", city: "", pincode: "", quantity: "1" });
+    setForm({ title: "", author: "", genre: "", condition: "", price: "", description: "", name: "", phone: "", email: "", address: "", city: "", pincode: "" });
     // Refresh genres list to include newly added genres
     fetchGenres();
   };
@@ -798,39 +796,24 @@ setShowDropdown(true);
           {/* Pricing */}
           <section className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-widest mb-4">
-              Pricing & Stock
+              Pricing
             </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Asking Price (Rs.)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">Set to 0 for exchange only.</p>
-              </div>
-
-              <div>
-                <label className={labelClass}>Quantity Available</label>
+            <div>
+              <label className={labelClass}>Asking Price (Rs.)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+                  Rs.
+                </span>
                 <input
                   type="number"
                   min="0"
-                  placeholder="1"
-                  value={form.quantity}
-                  onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
+                  placeholder="0"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition"
                 />
-                <p className="text-xs text-gray-400 mt-1.5">Set to 0 for out of stock.</p>
               </div>
+              <p className="text-xs text-gray-400 mt-1.5">Set to 0 for exchange only.</p>
             </div>
           </section>
 

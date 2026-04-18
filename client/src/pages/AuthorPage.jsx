@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import Navbar from "./Navbar";
-import { AUTHORS, BOOKS } from "./HomePage";
+// AUTHORS and BOOKS removed — all data from DB
 import Footer from "./Footer";
 import AuthorName from "../components/AuthorName";
 
@@ -37,11 +37,8 @@ export default function AuthorPage({ isLoggedIn, onLogout }) {
           setAuthorBooks(booksData);
         }
       } else {
-        // Fallback to hardcoded authors
-        const hardcodedAuthor = AUTHORS.find((a) => a.id === id);
-        if (hardcodedAuthor) {
-          setAuthor(hardcodedAuthor);
-        }
+        // Author not found in DB
+        setAuthor(null);
       }
       setLoading(false);
     };

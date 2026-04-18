@@ -37,8 +37,8 @@ export default function AdminUsers() {
     setLoading(true);
     try {
       let query = supabase.from("profiles").select("*");
-      if (filter === "verified")  query = query.eq("status", "approved");
-      else if (filter === "pending") query = query.eq("status", "pending");
+      if (filter === "verified")   query = query.eq("status", "approved");
+      else if (filter === "pending")   query = query.eq("status", "pending");
       else if (filter === "suspended") query = query.eq("is_blocked", true);
       query = query.order("created_at", { ascending: false });
       const { data, error } = await query;
@@ -67,28 +67,78 @@ export default function AdminUsers() {
     setActionLoading(false);
   }
 
+  // Suspend/unsuspend — forces logout if suspending by invalidating all sessions
   async function handleBlock(userId, isBlocked) {
     setActionLoading(true);
-    const { error } = await supabase.from("profiles").update({ is_blocked: !isBlocked }).eq("id", userId);
-    if (!error) {
-      fetchUsers();
-      if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_blocked: !isBlocked }));
+    const newBlocked = !isBlocked;
+
+    const { error } = await supabase.from("profiles")
+      .update({ is_blocked: newBlocked })
+      .eq("id", userId);
+
+    if (error) {
+      alert("Error updating user: " + error.message);
+      setActionLoading(false);
+      return;
     }
+
+    // If suspending, force-logout the user by signing them out server-side
+    if (newBlocked) {
+      try {
+        // This revokes all active sessions for the user via admin API
+        const { error: signOutErr } = await supabase.auth.admin.signOut(userId, "others");
+        if (signOutErr) {
+          // Fallback: update a flag the app checks on every load (already handled in App.jsx)
+          console.warn("Admin signout not available, relying on is_blocked check:", signOutErr.message);
+        }
+      } catch (e) {
+        console.warn("Force logout not available:", e.message);
+      }
+    }
+
+    fetchUsers();
+    if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_blocked: newBlocked }));
     setActionLoading(false);
   }
 
+  // Delete — calls Edge Function which uses service role to fully delete from auth.users
+  // This cascades to: profiles, books, cart, wishlist, transactions, notifications
   async function handleDelete(userId) {
     if (!userId) { alert("Invalid user ID"); return; }
     setActionLoading(true);
-    const { error } = await supabase.from("profiles").delete().eq("id", userId);
-    if (error) alert("Error deleting user: " + error.message);
-    else {
-      alert("User deleted successfully!");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/swift-responder`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        alert("Error deleting user: " + (result.error || "Unknown error"));
+        setActionLoading(false);
+        return;
+      }
+
+      alert("User deleted successfully! Their account and all data have been removed.");
       fetchUsers();
       setShowModal(false);
       setShowDeleteConfirm(false);
       setSelectedUser(null);
+    } catch (err) {
+      alert("Error deleting user: " + err.message);
     }
+
     setActionLoading(false);
   }
 
@@ -127,10 +177,10 @@ export default function AdminUsers() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: "Total Users",   value: users.length,                                    color: "indigo" },
-            { label: "Verified",      value: users.filter(u => u.status === "approved").length, color: "green" },
-            { label: "Pending",       value: users.filter(u => u.status === "pending").length,  color: "yellow" },
-            { label: "Suspended",       value: users.filter(u => u.is_blocked).length,            color: "red" },
+            { label: "Total Users",  value: users.length,                                     color: "indigo" },
+            { label: "Verified",     value: users.filter(u => u.status === "approved").length, color: "green" },
+            { label: "Pending",      value: users.filter(u => u.status === "pending").length,  color: "yellow" },
+            { label: "Suspended",    value: users.filter(u => u.is_blocked).length,            color: "red" },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-xl shadow-sm p-4 text-center">
               <p className={`text-2xl font-bold text-${stat.color}-600`}>{stat.value}</p>
@@ -184,11 +234,8 @@ export default function AdminUsers() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {(user.photo_url || user.image_url) ? (
-                            <img
-                              src={user.photo_url || user.image_url}
-                              alt={user.full_name}
-                              className="w-9 h-9 rounded-full object-cover border border-indigo-200 flex-shrink-0"
-                            />
+                            <img src={user.photo_url || user.image_url} alt={user.full_name}
+                              className="w-9 h-9 rounded-full object-cover border border-indigo-200 flex-shrink-0" />
                           ) : (
                             <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
                               {(user.full_name || user.email || "U")[0].toUpperCase()}
@@ -210,11 +257,9 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          user.status === "approved"
-                            ? "bg-green-100 text-green-700"
-                            : user.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-500"
+                          user.status === "approved" ? "bg-green-100 text-green-700"
+                          : user.status === "pending" ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-500"
                         }`}>{user.status || "—"}</span>
                       </td>
                       <td className="px-6 py-4">
@@ -223,12 +268,13 @@ export default function AdminUsers() {
                         }`}>{user.is_blocked ? "Suspended" : "Active"}</span>
                       </td>
                       <td className="px-6 py-4 text-gray-500 text-xs">
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString("en-IN", {
+                          day: "numeric", month: "short", year: "numeric"
+                        }) : "—"}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => viewUserDetails(user)}
+                          <button onClick={() => viewUserDetails(user)}
                             className="px-3 py-1.5 text-xs bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition font-medium">
                             View
                           </button>
@@ -260,16 +306,22 @@ export default function AdminUsers() {
             {showDeleteConfirm ? (
               <>
                 <h3 className="text-xl font-bold mb-2 text-gray-900">Delete User</h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-2">
                   Are you sure you want to permanently delete{" "}
-                  <strong>{selectedUser.full_name || selectedUser.email}</strong>? This cannot be undone.
+                  <strong>{selectedUser.full_name || selectedUser.email}</strong>?
                 </p>
+                <ul className="text-sm text-gray-500 mb-6 space-y-1 bg-red-50 rounded-lg p-3 border border-red-100">
+                  <li>⚠️ Their account will be permanently removed</li>
+                  <li>⚠️ They will be logged out immediately</li>
+                  <li>⚠️ They cannot log in again with this email</li>
+                  <li>⚠️ This cannot be undone</li>
+                </ul>
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleDelete(selectedUser.id)}
                     disabled={actionLoading}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">
-                    {actionLoading ? "Deleting..." : "Yes, Delete"}
+                    {actionLoading ? "Deleting..." : "Yes, Delete Permanently"}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
@@ -290,11 +342,8 @@ export default function AdminUsers() {
                 {/* Avatar + Name */}
                 <div className="flex items-center gap-4 mb-5">
                   {(selectedUser.photo_url || selectedUser.image_url) ? (
-                    <img
-                      src={selectedUser.photo_url || selectedUser.image_url}
-                      alt={selectedUser.full_name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200"
-                    />
+                    <img src={selectedUser.photo_url || selectedUser.image_url} alt={selectedUser.full_name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200" />
                   ) : (
                     <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-2xl border-2 border-indigo-200">
                       {(selectedUser.full_name || selectedUser.email || "U")[0].toUpperCase()}
@@ -314,13 +363,13 @@ export default function AdminUsers() {
                 {/* Info Grid */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-sm mb-4">
                   {[
-                    ["College",  selectedUser.college  || "—"],
-                    ["Phone",    selectedUser.phone    || "—"],
-                    ["Location", selectedUser.location || "—"],
-                    ["Role",     selectedUser.role     || "user"],
-                    ["Status",   selectedUser.status   || "—"],
-                    ["Suspended",  selectedUser.is_blocked ? "Yes" : "No"],
-                    ["Joined",   selectedUser.created_at
+                    ["College",   selectedUser.college   || "—"],
+                    ["Phone",     selectedUser.phone     || "—"],
+                    ["Location",  selectedUser.location  || "—"],
+                    ["Role",      selectedUser.role      || "user"],
+                    ["Status",    selectedUser.status    || "—"],
+                    ["Suspended", selectedUser.is_blocked ? "Yes" : "No"],
+                    ["Joined",    selectedUser.created_at
                       ? new Date(selectedUser.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
                       : "—"],
                   ].map(([label, value]) => (
@@ -336,11 +385,8 @@ export default function AdminUsers() {
                   <div className="mb-4">
                     <p className="text-xs font-semibold text-gray-500 uppercase mb-2">ID Card</p>
                     <a href={selectedUser.id_card_url} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={selectedUser.id_card_url}
-                        alt="ID Card"
-                        className="w-full rounded-xl border border-gray-200 object-cover max-h-48 hover:opacity-90 transition cursor-pointer"
-                      />
+                      <img src={selectedUser.id_card_url} alt="ID Card"
+                        className="w-full rounded-xl border border-gray-200 object-cover max-h-48 hover:opacity-90 transition cursor-pointer" />
                       <p className="text-xs text-indigo-500 mt-1 text-center">Click to open full size</p>
                     </a>
                   </div>
@@ -366,7 +412,7 @@ export default function AdminUsers() {
                         ? "bg-green-100 text-green-700 hover:bg-green-200"
                         : "bg-orange-100 text-orange-700 hover:bg-orange-200"
                     }`}>
-                    {selectedUser.is_blocked ? "Unsuspend User" : "Suspend User"}
+                    {actionLoading ? "..." : selectedUser.is_blocked ? "Unsuspend User" : "Suspend User"}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}

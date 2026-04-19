@@ -93,33 +93,49 @@ export default function WishlistPage({ isLoggedIn, onLogout, cart = [], wishlist
                     </p>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 mt-3">
-                    {isInCart(book.id) ? (
+                  {/* Availability Badge */}
+                  {book.is_available === false || (book.quantity !== undefined && book.quantity <= 0) ? (
+                    <div className="flex items-center gap-2 mt-3">
+                      <p className="text-xs text-red-600 font-semibold flex-1">❌ Currently Unavailable</p>
                       <button
-                        onClick={() => navigate("/cart")}
-                        className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 transition-all"
+                        onClick={() => removeFromWishlist && removeFromWishlist(book.id)}
+                        className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                        title="Remove from wishlist"
                       >
-                        ✓ In Cart
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
                       </button>
-                    ) : (
+                    </div>
+                  ) : (
+                    /* Actions */
+                    <div className="flex items-center gap-2 mt-3">
+                      {isInCart(book.id) ? (
+                        <button
+                          onClick={() => navigate("/cart")}
+                          className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 transition-all"
+                        >
+                          ✓ In Cart
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleMoveToCart(book)}
+                          className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all"
+                        >
+                          Add to Cart
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleMoveToCart(book)}
-                        className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all"
+                        onClick={() => removeFromWishlist && removeFromWishlist(book.id)}
+                        className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                        title="Remove from wishlist"
                       >
-                        Add to Cart
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
                       </button>
-                    )}
-                    <button
-                      onClick={() => removeFromWishlist && removeFromWishlist(book.id)}
-                      className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-                      title="Remove from wishlist"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

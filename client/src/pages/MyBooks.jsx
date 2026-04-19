@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import { notifyWishlistUsers } from "../notificationHelpers";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Edit2, Trash2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
@@ -60,6 +61,12 @@ export default function MyBooks({ isLoggedIn, onLogout, cart, wishlist }) {
     } else {
       setSuccessMessage(`Book marked as ${newAvailability ? "available" : "unavailable"}`);
       setBooks(books.map(b => b.id === book.id ? { ...b, is_available: newAvailability } : b));
+      
+      // Notify users if book becomes available
+      if (newAvailability) {
+        await notifyWishlistUsers(book.id, book);
+      }
+      
       setTimeout(() => setSuccessMessage(""), 3000);
     }
     setUpdating(false);

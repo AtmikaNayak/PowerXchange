@@ -127,9 +127,9 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
       return;
     }
 
-    // Block if explicitly marked unavailable
-    if (book.is_available === false) {
-      alert("Sorry, this book is currently unavailable.");
+    // Block if explicitly marked unavailable or out of stock
+    if (book.is_available === false || (book.quantity !== undefined && book.quantity <= 0)) {
+      alert("Sorry, this book is currently out of stock and cannot be purchased.");
       navigate("/home");
       return;
     }
@@ -214,6 +214,14 @@ export default function BuyBook({ isLoggedIn, onLogout, cart, wishlist, removeFr
         >
           ← Back
         </button>
+
+        {/* Out of Stock Warning */}
+        {(book.is_available === false || (book.quantity !== undefined && book.quantity <= 0)) && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-5 text-center">
+            <p className="text-red-600 font-bold text-base">❌ This book is currently out of stock</p>
+            <p className="text-red-500 text-sm mt-1">You cannot place an order for this book at this time.</p>
+          </div>
+        )}
 
         {/* Book Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-5">

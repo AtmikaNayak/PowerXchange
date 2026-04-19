@@ -51,7 +51,8 @@ export default function App() {
 
     if (cartErr) console.error("Cart load error:", cartErr.message);
     if (cartRows) {
-      setCart(cartRows.filter(r => r.books).map(r => ({ ...r.books, imageUrl: r.books.image_url })));
+      // Filter out unavailable books from cart
+      setCart(cartRows.filter(r => r.books && r.books.is_available !== false && (r.books.quantity === null || r.books.quantity > 0)).map(r => ({ ...r.books, imageUrl: r.books.image_url })));
     }
 
     // Load wishlist joined with books
@@ -131,6 +132,12 @@ export default function App() {
 
   // ── Cart actions ─────────────────────────────────────────────────────────
   const addToCart = useCallback(async (book) => {
+    // Check if book is available before adding
+    if (book.is_available === false || (book.quantity !== undefined && book.quantity <= 0)) {
+      alert("This book is currently out of stock and cannot be added to cart.");
+      return;
+    }
+
     // Optimistic update
     setCart(prev => prev.find(b => b.id === book.id) ? prev : [...prev, { ...book, imageUrl: book.imageUrl || book.image_url }]);
 

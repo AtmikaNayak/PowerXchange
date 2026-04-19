@@ -7,10 +7,26 @@ export default function CartPage({ isLoggedIn, onLogout, cart = [], wishlist = [
   const navigate = useNavigate();
 
   const total = cart.reduce((sum, book) => sum + (Number(book.price) || 0), 0);
+  
+  // Filter available books for purchase
+  const availableBooks = cart.filter(b => b.is_available !== false && (b.quantity === null || b.quantity > 0));
+  const hasUnavailableBooks = cart.length > availableBooks.length;
 
   const handleMoveToWishlist = (book) => {
     if (typeof removeFromCart === "function") removeFromCart(book.id);
     if (typeof addToWishlist === "function") addToWishlist(book);
+  };
+
+  const handleProceedToBuy = () => {
+    if (availableBooks.length === 0) {
+      alert("All items in your cart are currently out of stock. Please remove them and try again.");
+      return;
+    }
+    if (hasUnavailableBooks) {
+      alert("Some items in your cart are out of stock. Please remove them before proceeding.");
+      return;
+    }
+    navigate(`/buybook/${availableBooks[0]?.id}`);
   };
 
   return (
@@ -93,12 +109,18 @@ export default function CartPage({ isLoggedIn, onLogout, cart = [], wishlist = [
 
                     {/* Actions */}
                     <div className="flex items-center gap-3 mt-3">
-                      <button
-                        onClick={() => navigate(`/buybook/${book.id}`)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-all"
-                      >
-                        Buy Now
-                      </button>
+                      {book.is_available === false || (book.quantity !== undefined && book.quantity <= 0) ? (
+                        <button disabled className="bg-red-100 text-red-600 text-sm font-semibold px-4 py-1.5 rounded-lg cursor-not-allowed">
+                          ❌ Currently Unavailable
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/buybook/${book.id}`)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-all"
+                        >
+                          Buy Now
+                        </button>
+                      )}
                       <button
                         onClick={() => handleMoveToWishlist(book)}
                         className="text-sm text-slate-500 hover:text-rose-500 transition-colors font-medium"
@@ -146,10 +168,11 @@ export default function CartPage({ isLoggedIn, onLogout, cart = [], wishlist = [
                 </div>
 
                 <button
-                  onClick={() => navigate(`/buybook/${cart[0]?.id}`)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all"
+                  onClick={() => handleProceedToBuy()}
+                  disabled={availableBooks.length === 0}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all"
                 >
-                  Proceed to Buy
+                  {hasUnavailableBooks ? "Remove Unavailable Items to Continue" : "Proceed to Buy"}
                 </button>
 
                 <button

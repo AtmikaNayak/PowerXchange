@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
+import { notifyWishlistUsers } from "../notificationHelpers";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Package, ShoppingBag, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
@@ -125,11 +126,14 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
       // Restore book quantity
       if (tx.books?.id) {
         const { data: book } = await supabase
-          .from("books").select("quantity").eq("id", tx.books.id).single();
+          .from("books").select("quantity, title").eq("id", tx.books.id).single();
         if (book) {
           await supabase.from("books")
             .update({ quantity: (book.quantity || 0) + 1, is_available: true })
             .eq("id", tx.books.id);
+          
+          // Notify users who wishlisted this book
+          await notifyWishlistUsers(tx.books.id, book);
         }
       }
 
@@ -181,11 +185,14 @@ export default function OrdersPage({ isLoggedIn, onLogout, cart, wishlist }) {
       // Step 3: Restore book quantity
       if (tx.books?.id) {
         const { data: book } = await supabase
-          .from("books").select("quantity").eq("id", tx.books.id).single();
+          .from("books").select("quantity, title").eq("id", tx.books.id).single();
         if (book) {
           await supabase.from("books")
             .update({ quantity: (book.quantity || 0) + 1, is_available: true })
             .eq("id", tx.books.id);
+          
+          // Notify users who wishlisted this book
+          await notifyWishlistUsers(tx.books.id, book);
         }
       }
 

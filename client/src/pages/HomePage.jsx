@@ -579,7 +579,7 @@ function AuthorSlider({ onAuthorClick }) {
   );
 }
 
-export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist }) {
+export default function HomePage({ isLoggedIn, isAdmin, onLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist }) {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [tab, setTab] = useState("books");
@@ -730,7 +730,7 @@ export default function HomePage({ isLoggedIn, onLogout, cart, wishlist, addToCa
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans">
-      <Navbar isLoggedIn={isLoggedIn} onLogout={onLogout} cart={cart} wishlist={wishlist} />
+      <Navbar isLoggedIn={isLoggedIn} isAdmin={isAdmin} onLogout={onLogout} cart={cart} wishlist={wishlist} />
 
       {searchQuery ? (
         <div className="pb-20">

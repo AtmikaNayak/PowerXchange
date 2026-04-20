@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { useTheme } from "../context/ThemeContext";
 
-export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] }) {
+export default function Navbar({ isLoggedIn, isAdmin, onLogout, cart = [], wishlist = [] }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -53,7 +53,7 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
 
       {/* Logo */}
       <h1
-        onClick={() => navigate("/home")}
+        onClick={() => navigate(isLoggedIn ? "/home" : "/")}
         className="text-2xl font-bold cursor-pointer tracking-tight shrink-0"
       >
         <span className="text-blue-600 dark:text-blue-400">Power</span>
@@ -101,6 +101,13 @@ export default function Navbar({ isLoggedIn, onLogout, cart = [], wishlist = [] 
               className="text-sm text-slate-500 dark:text-gray-400 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Orders
             </button>
+
+            {isAdmin && (
+              <button onClick={() => navigate("/admin")}
+                className="text-sm text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+                Admin Panel
+              </button>
+            )}
 
             {/* Cart badge */}
             <button onClick={() => navigate("/cart")}

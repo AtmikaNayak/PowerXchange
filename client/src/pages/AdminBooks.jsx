@@ -22,6 +22,7 @@ export default function AdminBooks() {
   async function fetchBooks() {
     setLoading(true);
 
+    // First fetch books
     let query = supabase.from("books").select("*");
 
     if (filter === "approved") {
@@ -32,14 +33,43 @@ export default function AdminBooks() {
 
     query = query.order("created_at", { ascending: false });
 
-    const { data, error } = await query;
+    const { data: booksData, error: booksError } = await query;
 
-    if (error) {
-      console.error("Error fetching books:", error);
-    } else {
-      console.log("Fetched books:", data);
-      setBooks(data || []);
+    if (booksError) {
+      console.error("Error fetching books:", booksError);
+      setLoading(false);
+      return;
     }
+
+    console.log("Fetched books:", booksData);
+
+    // Fetch profiles for sellers to get name and college
+    const booksWithProfileData = await Promise.all((booksData || []).map(async (book) => {
+      let updatedBook = { ...book };
+
+      // Fetch from profiles if seller_id exists
+      if (book.seller_id) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name, college")
+          .eq("id", book.seller_id)
+          .single();
+
+        if (profileData) {
+          // Use profile full_name if seller_name is missing
+          if (!updatedBook.seller_name && profileData.full_name) {
+            updatedBook.seller_name = profileData.full_name;
+          }
+          // Use profile college if seller_college is missing
+          if (!updatedBook.seller_college && profileData.college) {
+            updatedBook.seller_college = profileData.college;
+          }
+        }
+      }
+      return updatedBook;
+    }));
+
+    setBooks(booksWithProfileData);
     setLoading(false);
   }
 
@@ -192,7 +222,7 @@ export default function AdminBooks() {
                     <p>
                       Seller: <UserBadge userName={book.seller_name || "Unknown"} userId={book.seller_id} />
                     </p>
-                    <p>College: {book.seller_college || book.profiles?.college || "N/A"}</p>
+                    <p>College: {book.seller_college || "N/A"}</p>
                   </div>
                   <p className="text-xs text-gray-400 mb-4">
                     Condition: {book.condition || "N/A"} | Genre: {book.genre || "N/A"}

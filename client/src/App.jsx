@@ -205,7 +205,8 @@ export default function App() {
   };
 
   const isLoggedIn = authState === "user" || authState === "admin";
-  const sharedProps = { isLoggedIn, onLogout: handleLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist };
+  const isAdmin = authState === "admin";
+  const sharedProps = { isLoggedIn, isAdmin, onLogout: handleLogout, cart, wishlist, addToCart, removeFromCart, addToWishlist, removeFromWishlist };
 
   if (authState === "loading") {
     return (
